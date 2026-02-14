@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+
+  <div class="card p-4 shadow col-md-6 mx-auto">
+
+    <h4>Order: {{ gig.title }}</h4>
+    <p class="text-success">Price: ₹ {{ gig.price }}</p>
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <label>Project Requirements</label>
+      <textarea name="requirements" class="form-control mb-3" rows="4" required></textarea>
+
+      <label>Deadline</label>
+      <input type="date" name="deadline" class="form-control mb-3" required>
+
+      <button class="btn btn-primary w-100">Proceed to Payment</button>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

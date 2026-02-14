@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <label>Upload Source Code:</label>
+    <input type="file" name="delivery_file">
+
+    <label>Upload Output Screenshot:</label>
+    <input type="file" name="output_image">
+
+    <label>Message:</label>
+    <textarea name="delivery_message"></textarea>
+
+    <button type="submit">Submit Delivery</button>
+</form>
+
+{% endblock %}

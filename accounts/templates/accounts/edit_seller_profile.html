@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+  <div class="card p-4 shadow col-md-6 mx-auto">
+
+    <h4>Edit Seller Profile</h4>
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <label>Skills</label>
+      <input type="text" name="skills" value="{{ profile.skills }}" class="form-control mb-3">
+
+      <label>Experience (Years)</label>
+      <input type="number" name="experience" value="{{ profile.experience }}" class="form-control mb-3">
+
+      <label>Portfolio Link</label>
+      <input type="url" name="portfolio_link" value="{{ profile.portfolio_link }}" class="form-control mb-3">
+
+      <button class="btn btn-success w-100">Save</button>
+
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

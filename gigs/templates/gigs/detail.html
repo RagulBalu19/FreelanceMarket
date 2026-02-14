@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+  <div class="card p-4 shadow">
+
+    <h2>{{ gig.title }}</h2>
+
+    {% if gig.image %}
+      <img src="{{ gig.image.url }}" width="300" class="mb-3">
+    {% endif %}
+
+    <p>{{ gig.description }}</p>
+
+    <h4 class="text-success">₹ {{ gig.price }}</h4>
+
+    {% if user.is_authenticated and user.role == 'buyer' %}
+      <a href="{% url 'create_order' gig.slug %}" class="btn btn-primary">
+          Buy Now
+      </a>
+      <hr>
+      <h5>Seller Information</h5>
+      <p><strong>Skills:</strong> {{ gig.seller.seller_profile.skills }}</p>
+      <p><strong>Experience:</strong> {{ gig.seller.seller_profile.experience }} years</p>
+      <p><strong>Rating:</strong> ⭐ {{ gig.seller.seller_profile.rating }}</p>
+
+    {% endif %}
+    
+  </div>
+
+</div>
+
+{% endblock %}

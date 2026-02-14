@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+
+<h2 class="mb-4 text-center">🏆 Top Sellers Leaderboard</h2>
+
+<div class="card p-4 shadow">
+
+<table class="table table-striped">
+<thead>
+<tr>
+  <th>Rank</th>
+  <th>Seller</th>
+  <th>Skills</th>
+  <th>Total Earnings</th>
+  <th>Rating</th>
+</tr>
+</thead>
+
+<tbody>
+{% for seller in top_sellers %}
+<tr>
+  <td>
+    {% if forloop.counter == 1 %}🥇
+    {% elif forloop.counter == 2 %}🥈
+    {% elif forloop.counter == 3 %}🥉
+    {% else %}{{ forloop.counter }}
+    {% endif %}
+  </td>
+  <td>{{ seller.user.username }}</td>
+  <td>{{ seller.skills }}</td>
+  <td class="text-success">₹ {{ seller.total_earnings }}</td>
+  <td>⭐ {{ seller.rating }}</td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="5">No sellers yet</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+{% endblock %}

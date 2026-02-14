@@ -1,0 +1,6 @@
+seller
+    u_name: ITadmin
+    pwd: admin@123
+buyer
+    u_name:sales
+    pwd: admin@123

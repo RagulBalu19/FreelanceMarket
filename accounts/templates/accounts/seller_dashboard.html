@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Seller Dashboard</h2>
+
+<a href="{% url 'create_gig' %}" class="btn btn-primary">Create New Gig</a>
+
+<hr>
+
+<h4>My Gigs</h4>
+<div class="card p-3 mb-4 shadow">
+    <h5>Total Earnings</h5>
+    <h3 class="text-success">₹ {{ request.user.seller_profile.total_earnings }}</h3>
+</div>
+
+{% for gig in gigs %}
+    <div class="card p-2 mb-2 shadow">
+        {{ gig.title }} - ₹ {{ gig.price }}
+    </div>
+{% empty %}
+    <p>No gigs yet</p>
+{% endfor %}
+
+{% endblock %}

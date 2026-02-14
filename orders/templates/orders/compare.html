@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+<h4>Submission Comparison</h4>
+
+{% for delivery in deliveries %}
+<div class="card p-3 mb-3">
+    <h6>Version {{ delivery.version }}</h6>
+    <p><strong>Message:</strong> {{ delivery.message }}</p>
+    <p><strong>Changes:</strong> {{ delivery.change_log }}</p>
+    <a href="{{ delivery.file.url }}" class="btn btn-info btn-sm">Download</a>
+</div>
+{% endfor %}
+
+</div>
+{% endblock %}

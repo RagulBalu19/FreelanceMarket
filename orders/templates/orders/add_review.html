@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+  <div class="card p-4 shadow col-md-6 mx-auto">
+
+    <h4>Leave Review for {{ order.gig.title }}</h4>
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <label>Rating (1–5)</label>
+      <input type="number" name="rating" min="1" max="5" class="form-control mb-3" required>
+
+      <label>Comment</label>
+      <textarea name="comment" class="form-control mb-3"></textarea>
+
+      <button class="btn btn-success w-100">Submit Review</button>
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

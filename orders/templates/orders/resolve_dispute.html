@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+
+<div class="card p-4 shadow col-md-6 mx-auto">
+
+<h4>Resolve Dispute</h4>
+
+<p><strong>Reason:</strong> {{ dispute.reason }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Resolution Note</label>
+    <textarea name="note" class="form-control mb-3"></textarea>
+
+    <button name="action" value="refund" class="btn btn-danger w-100 mb-2">
+        Refund Buyer
+    </button>
+
+    <button name="action" value="release" class="btn btn-success w-100">
+        Release Payment to Seller
+    </button>
+</form>
+
+</div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+<h3>Seller Orders</h3>
+
+<table class="table table-striped bg-white">
+<tr>
+  <th>Gig</th>
+  <th>Buyer</th>
+  <th>Amount</th>
+  <th>Status</th>
+</tr>
+
+{% for order in orders %}
+<tr>
+  <td>{{ order.gig.title }}</td>
+  <td>{{ order.buyer.username }}</td>
+  <td>₹ {{ order.amount }}</td>
+  <td>{{ order.status }}</td>
+  <td>{{ order.requirements }}</td>
+  <td>{{ order.deadline }}</td>
+
+</tr>
+{% empty %}
+<tr><td colspan="4">No orders yet</td></tr>
+{% endfor %}
+
+</table>
+<a href="{% url 'order_chat' order.order_id %}" class="btn btn-secondary btn-sm">
+    Chat
+</a>
+
+{% if order.status == 'REVISION' %}
+  <span class="text-danger">Revision Requested</span>
+  <a href="{% url 'start_order' order.order_id %}" class="btn btn-info btn-sm">
+      Rework
+  </a>
+{% endif %}
+{% if order.status == 'REVISION' %}
+  <p class="text-danger">
+    <strong>Revision Reason:</strong> {{ order.revision_reason }}
+  </p>
+{% endif %}
+
+<h6>Delivery History:</h6>
+
+{% for order in orders %}
+<tr>
+  <td>{{ order.gig.title }}</td>
+  <td>{{ order.buyer.username }}</td>
+  <td>₹ {{ order.amount }}</td>
+  <td>{{ order.status }}</td>
+  <td>
+    <a href="{% url 'order_chat' order.order_id %}" class="btn btn-secondary btn-sm">Chat</a>
+
+    {% if order.status == 'IN_PROGRESS' or order.status == 'REVISION' %}
+      <a href="{% url 'deliver_order' order.order_id %}" class="btn btn-success btn-sm">Deliver</a>
+    {% endif %}
+
+    {% if order.status == 'REVISION' %}
+      <p class="text-danger">{{ order.revision_reason }}</p>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+
+{% if order.status == 'OVERDUE' %}
+  <span class="text-danger">⚠ Overdue</span>
+  <p>Penalty: ₹ {{ order.penalty_amount }}</p>
+  <a href="{% url 'extend_deadline' order.order_id %}" class="btn btn-warning btn-sm">
+      Extend Deadline
+  </a>
+{% endif %}
+
+</div>
+
+{% endblock %}

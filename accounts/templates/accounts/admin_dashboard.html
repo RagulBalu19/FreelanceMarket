@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+
+<h2 class="mb-4">Admin Analytics Dashboard 📊</h2>
+
+<div class="row">
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Total Users</h5>
+      <h3>{{ total_users }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Total Sellers</h5>
+      <h3>{{ total_sellers }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Total Buyers</h5>
+      <h3>{{ total_buyers }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Total Gigs</h5>
+      <h3>{{ total_gigs }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Total Orders</h5>
+      <h3>{{ total_orders }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Completed Orders</h5>
+      <h3>{{ completed_orders }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Total Revenue</h5>
+      <h3 class="text-success">₹ {{ total_revenue }}</h3>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-3">
+    <div class="card p-3 shadow">
+      <h5>Platform Commission (10%)</h5>
+      <h3 class="text-danger">₹ {{ platform_commission }}</h3>
+    </div>
+  </div>
+
+</div>
+
+</div>
+<hr class="my-4">
+
+<h4 class="mb-3">Revenue Comparison 📊</h4>
+
+<div class="row">
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h6>This Month</h6>
+      <h4 class="text-success">₹ {{ current_month_revenue }}</h4>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h6>Previous Month</h6>
+      <h4>₹ {{ previous_month_revenue }}</h4>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card p-3 shadow">
+      <h6>Growth</h6>
+      {% if growth_percentage > 0 %}
+        <h4 class="text-success">+{{ growth_percentage }}%</h4>
+      {% elif growth_percentage < 0 %}
+        <h4 class="text-danger">{{ growth_percentage }}%</h4>
+      {% else %}
+        <h4>0%</h4>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+
+<hr class="my-5">
+
+<h4 class="mb-3">🏆 Top Sellers Leaderboard</h4>
+
+<div class="card p-3 shadow">
+
+<table class="table table-striped">
+<thead>
+<tr>
+  <th>Rank</th>
+  <th>Seller</th>
+  <th>Total Earnings</th>
+  <th>Rating</th>
+</tr>
+</thead>
+
+<tbody>
+{% for seller in top_sellers %}
+<tr>
+  <td>
+    {% if forloop.counter == 1 %}🥇
+    {% elif forloop.counter == 2 %}🥈
+    {% elif forloop.counter == 3 %}🥉
+    {% else %}{{ forloop.counter }}
+    {% endif %}
+  </td>
+  <td>{{ seller.user.username }}</td>
+  <td class="text-success">₹ {{ seller.total_earnings }}</td>
+  <td>⭐ {{ seller.rating }}</td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="4">No sellers yet</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+</div>
+
+<hr class="my-5">
+
+<h4 class="mb-3">Monthly Revenue Chart 📈</h4>
+
+<canvas id="revenueChart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ctx = document.getElementById('revenueChart').getContext('2d');
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: {{ months|safe }},
+        datasets: [{
+            label: 'Revenue (₹)',
+            data: {{ revenues|safe }},
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+
+
+{% endblock %}

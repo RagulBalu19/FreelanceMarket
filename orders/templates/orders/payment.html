@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="container mt-5">
+
+<div class="card p-4 shadow text-center col-md-4 mx-auto">
+
+  <h4 class="mb-3">Complete Payment 💳</h4>
+
+  <button id="pay-btn" class="btn btn-success w-100">
+      Pay ₹ {{ order.amount }}
+  </button>
+
+</div>
+
+</div>
+
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+var options = {
+    "key": "{{ key }}",
+    "amount": "{{ payment.amount }}",
+    "currency": "INR",
+    "order_id": "{{ payment.id }}",
+
+    "handler": function (response){
+        window.location.href =
+        "{% url 'payment_success' %}?order_id={{ order.order_id }}&payment_id=" 
+        + response.razorpay_payment_id;
+    }
+};
+
+var rzp = new Razorpay(options);
+
+document.getElementById('pay-btn').onclick = function(e){
+    rzp.open();
+    e.preventDefault();
+}
+</script>
+
+{% endblock %}

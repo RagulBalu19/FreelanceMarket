@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+
+<h3 class="mb-4">All Gigs</h3>
+
+<div class="container mt-5">
+  <div class="row">
+
+    {% for gig in gigs %}
+    <div class="col-md-4 mb-4">
+
+      <div class="card shadow h-100">
+
+        {% if gig.image %}
+        <img src="{{ gig.image.url }}" class="card-img-top" style="height:200px; object-fit:cover;">
+        {% endif %}
+
+        <div class="card-body">
+
+          <h5>{{ gig.title }}</h5>
+
+          <p class="text-muted">
+            ₹ {{ gig.price }}
+          </p>
+
+          <a href="{% url 'gig_detail' gig.slug %}"
+             class="btn btn-dark w-100">
+             View Details
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+
+{% endblock %}
