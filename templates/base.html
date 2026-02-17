@@ -1,32 +1,3 @@
-{% comment %} <!-- templates/base.html -->
-<!DOCTYPE html>
-<html>
-{% load static %}
-<head>
-    <title>Freelance Market</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-
-<body>
-
-    <h2>Freelance Market</h2>
-
-    <nav>
-        <a href="/">Home</a> |
-        <a href="/gigs/">Gigs</a> |
-        <a href="/orders/my/">My Orders</a> |
-        <a href="/accounts/login/">Login</a>
-    </nav>
-
-    <hr>
-
-    {% block content %}
-    {% endblock %}
-
-</body>
-</html> {% endcomment %}
-
-
 {% load static %}
 <!DOCTYPE html>
 <html>

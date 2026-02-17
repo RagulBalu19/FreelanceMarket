@@ -6,13 +6,19 @@
 <h3>Seller Orders</h3>
 
 <table class="table table-striped bg-white">
+<thead>
 <tr>
   <th>Gig</th>
   <th>Buyer</th>
   <th>Amount</th>
   <th>Status</th>
+  <th>Requirements</th>
+  <th>Deadline</th>
+  <th>Actions</th>
 </tr>
+</thead>
 
+<tbody>
 {% for order in orders %}
 <tr>
   <td>{{ order.gig.title }}</td>
@@ -22,57 +28,85 @@
   <td>{{ order.requirements }}</td>
   <td>{{ order.deadline }}</td>
 
-</tr>
-{% empty %}
-<tr><td colspan="4">No orders yet</td></tr>
-{% endfor %}
-
-</table>
-<a href="{% url 'order_chat' order.order_id %}" class="btn btn-secondary btn-sm">
-    Chat
-</a>
-
-{% if order.status == 'REVISION' %}
-  <span class="text-danger">Revision Requested</span>
-  <a href="{% url 'start_order' order.order_id %}" class="btn btn-info btn-sm">
-      Rework
-  </a>
-{% endif %}
-{% if order.status == 'REVISION' %}
-  <p class="text-danger">
-    <strong>Revision Reason:</strong> {{ order.revision_reason }}
-  </p>
-{% endif %}
-
-<h6>Delivery History:</h6>
-
-{% for order in orders %}
-<tr>
-  <td>{{ order.gig.title }}</td>
-  <td>{{ order.buyer.username }}</td>
-  <td>₹ {{ order.amount }}</td>
-  <td>{{ order.status }}</td>
   <td>
-    <a href="{% url 'order_chat' order.order_id %}" class="btn btn-secondary btn-sm">Chat</a>
 
+    <!-- Start Work (After Payment) -->
+    {% if order.status == 'PAID' %}
+      <a href="{% url 'start_order' order.order_id %}" 
+         class="btn btn-primary btn-sm">
+         Start Work
+      </a>
+    {% endif %}
+
+    <!-- Chat Button -->
+    <a href="{% url 'order_chat' order.order_id %}" 
+       class="btn btn-secondary btn-sm">
+       Chat
+    </a>
+
+    <!-- Deliver Button -->
     {% if order.status == 'IN_PROGRESS' or order.status == 'REVISION' %}
-      <a href="{% url 'deliver_order' order.order_id %}" class="btn btn-success btn-sm">Deliver</a>
+      <a href="{% url 'deliver_order' order.order_id %}" 
+         class="btn btn-success btn-sm">
+         Deliver
+      </a>
     {% endif %}
 
+    <!-- Rework Button -->
     {% if order.status == 'REVISION' %}
-      <p class="text-danger">{{ order.revision_reason }}</p>
+      <a href="{% url 'start_order' order.order_id %}" 
+         class="btn btn-info btn-sm">
+         Rework
+      </a>
     {% endif %}
+
+    <!-- Extend Deadline -->
+    {% if order.status == 'OVERDUE' %}
+      <a href="{% url 'extend_deadline' order.order_id %}" 
+         class="btn btn-warning btn-sm">
+         Extend
+      </a>
+    {% endif %}
+
+</td>
+
+</tr>
+
+<!-- Revision Reason -->
+{% if order.status == 'REVISION' %}
+<tr>
+  <td colspan="7" class="text-danger">
+    <strong>Revision Reason:</strong> {{ order.revision_reason }}
   </td>
 </tr>
-{% endfor %}
-
-{% if order.status == 'OVERDUE' %}
-  <span class="text-danger">⚠ Overdue</span>
-  <p>Penalty: ₹ {{ order.penalty_amount }}</p>
-  <a href="{% url 'extend_deadline' order.order_id %}" class="btn btn-warning btn-sm">
-      Extend Deadline
-  </a>
 {% endif %}
+
+<!-- Delivery History -->
+{% if order.deliveries.all %}
+<tr>
+  <td colspan="7">
+    <strong>Delivery History:</strong>
+    <ul>
+      {% for delivery in order.deliveries.all %}
+        <li>
+          Version {{ delivery.version }} -
+          <a href="{{ delivery.file.url }}">Download</a>
+          ({{ delivery.submitted_at }})
+        </li>
+      {% endfor %}
+    </ul>
+  </td>
+</tr>
+{% endif %}
+
+{% empty %}
+<tr>
+  <td colspan="7">No orders yet</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
 
 </div>
 

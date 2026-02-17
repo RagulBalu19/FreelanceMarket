@@ -1,6 +1,6 @@
-seller
+seller(gig posting )
     u_name: ITadmin
     pwd: admin@123
-buyer
+buyer(gig purchase)
     u_name:sales
     pwd: admin@123

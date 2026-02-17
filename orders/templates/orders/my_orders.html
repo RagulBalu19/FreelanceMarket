@@ -6,6 +6,7 @@
 <h3>My Orders</h3>
 
 <table class="table table-bordered bg-white">
+<thead>
 <tr>
   <th>Gig</th>
   <th>Amount</th>
@@ -14,7 +15,9 @@
   <th>Deadline</th>
   <th>Actions</th>
 </tr>
+</thead>
 
+<tbody>
 {% for order in orders %}
 <tr>
   <td>{{ order.gig.title }}</td>
@@ -22,40 +25,84 @@
   <td>{{ order.status }}</td>
   <td>{{ order.requirements }}</td>
   <td>{{ order.deadline }}</td>
+
   <td>
 
+    <!-- Pay -->
     {% if order.status == 'PENDING' %}
-      <a href="{% url 'pay_order' order.order_id %}" class="btn btn-warning btn-sm">Pay</a>
+      <a href="{% url 'pay_order' order.order_id %}" 
+         class="btn btn-warning btn-sm">
+         Pay
+      </a>
     {% endif %}
 
-    <a href="{% url 'order_chat' order.order_id %}" class="btn btn-secondary btn-sm">
-        Chat
+    <!-- Chat -->
+    <a href="{% url 'order_chat' order.order_id %}" 
+       class="btn btn-secondary btn-sm">
+       Chat
     </a>
 
-    {% if order.status == 'COMPLETED' and not order.review %}
-      <a href="{% url 'add_review' order.order_id %}" class="btn btn-success btn-sm">
-          Leave Review
+    <!-- Accept (when delivered) -->
+    {% if order.status == 'SUBMITTED' %}
+      <a href="{% url 'complete_order' order.order_id %}" 
+         class="btn btn-success btn-sm">
+         Accept
       </a>
     {% endif %}
 
+    <!-- Request Revision -->
     {% if order.status == 'SUBMITTED' and order.revision_count < order.max_revisions %}
-      <a href="{% url 'request_revision' order.order.id %}" class="btn btn-warning btn-sm">
-          Request Revision
+      <a href="{% url 'request_revision' order.order_id %}" 
+         class="btn btn-warning btn-sm">
+         Request Revision
       </a>
     {% endif %}
 
-    {% if order.delivery_file %}
-        <a href="{{ order.delivery_file.url }}">Download Source Code</a>
+    <!-- Leave Review -->
+    {% if order.status == 'COMPLETED' and not order.review %}
+      <a href="{% url 'add_review' order.order_id %}" 
+         class="btn btn-primary btn-sm">
+         Leave Review
+      </a>
     {% endif %}
 
-    {% if order.output_image %}
-        <img src="{{ order.output_image.url }}" width="300">
+    <!-- Compare Submissions -->
+    {% if order.deliveries.count > 1 %}
+      <a href="{% url 'compare_submissions' order.order_id %}" 
+         class="btn btn-info btn-sm">
+         Compare
+      </a>
     {% endif %}
 
+</td>
 
-  </td>
 </tr>
 
+<!-- Revision Reason -->
+{% if order.status == 'REVISION' %}
+<tr>
+  <td colspan="6" class="text-danger">
+    <strong>Revision Reason:</strong> {{ order.revision_reason }}
+  </td>
+</tr>
+{% endif %}
+
+<!-- Overdue Section -->
+{% if order.status == 'OVERDUE' %}
+<tr>
+  <td colspan="6" class="text-danger">
+    ⚠ <strong>Overdue</strong><br>
+    Penalty: ₹ {{ order.penalty_amount }}
+    <br>
+    <a href="{% url 'extend_deadline' order.order_id %}" 
+       class="btn btn-warning btn-sm mt-2">
+       Extend Deadline
+    </a>
+  </td>
+</tr>
+{% endif %}
+
+<!-- Delivery History -->
 <tr>
   <td colspan="6">
 
@@ -65,7 +112,8 @@
       <div class="card p-2 mb-2">
         <strong>Version {{ delivery.version }}</strong>
         <p>{{ delivery.message }}</p>
-        <a href="{{ delivery.file.url }}" class="btn btn-info btn-sm">Download</a>
+        <a href="{{ delivery.file.url }}" 
+           class="btn btn-info btn-sm">Download</a>
         <small class="text-muted float-end">
           {{ delivery.submitted_at }}
         </small>
@@ -82,16 +130,8 @@
   <td colspan="6">No orders yet</td>
 </tr>
 {% endfor %}
-
+</tbody>
 </table>
-{% if order.status == 'OVERDUE' %}
-  <span class="text-danger">⚠ Overdue</span>
-  <p>Penalty: ₹ {{ order.penalty_amount }}</p>
-  <a href="{% url 'extend_deadline' order.order_id %}" class="btn btn-warning btn-sm">
-      Extend Deadline
-  </a>
-{% endif %}
-
 
 </div>
 

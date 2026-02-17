@@ -1,43 +1,34 @@
-from datetime import timezone
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
-from .forms import RegisterForm
-from gigs.models import Gig
-from orders.models import Order
-from django.urls import reverse_lazy
-from accounts.models import SellerProfile
 from django.contrib.admin.views.decorators import staff_member_required
+from django.urls import reverse_lazy
 from django.db.models import Sum
-from orders.models import Order
-from .models import User, SellerProfile
 from django.db.models.functions import TruncMonth
-import json
-from accounts.models import Notification
 from django.utils import timezone
 from datetime import timedelta
-from .models import Notification
+import json
+
+from .forms import RegisterForm
+from .models import User, SellerProfile, Notification
+from gigs.models import Gig
+from orders.models import Order
 from orders.views import check_overdue_orders
 
-# check_overdue_orders()
 
 # ---------------- REGISTER ----------------
 def register_view(request):
-    if request.method == 'POST':        
+    if request.method == 'POST':
         form = RegisterForm(request.POST, request.FILES)
-    
+
         if form.is_valid():
             user = form.save()
             login(request, user)
-    
-            # ALWAYS go to dashboard
             return redirect('dashboard')
-        else:
-            print(form.errors)
     else:
         form = RegisterForm()
-        
+
     return render(request, 'accounts/register.html', {'form': form})
 
 
@@ -45,7 +36,6 @@ def register_view(request):
 class CustomLoginView(LoginView):
     template_name = 'accounts/login.html'
 
-    # ALWAYS go to dashboard
     def get_success_url(self):
         return reverse_lazy('dashboard')
 
@@ -55,8 +45,9 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
-def public_leaderboard(request):
 
+# ---------------- PUBLIC LEADERBOARD ----------------
+def public_leaderboard(request):
     top_sellers = SellerProfile.objects.select_related('user') \
         .order_by('-total_earnings')
 
@@ -64,6 +55,8 @@ def public_leaderboard(request):
         "top_sellers": top_sellers
     })
 
+
+# ---------------- CREATE NOTIFICATION ----------------
 def create_notification(user, message, order=None):
     Notification.objects.create(
         user=user,
@@ -71,26 +64,22 @@ def create_notification(user, message, order=None):
         order=order
     )
 
-# ---------------- DASHBOARD (role logic here) ----------------
 
+# ---------------- DASHBOARD (ROLE BASED REDIRECT) ----------------
 @login_required
 def dashboard(request):
     check_overdue_orders()
 
-    if request.user.role == "seller":
-        gigs = Gig.objects.filter(seller=request.user)
-        completed_orders = Order.objects.filter(
-            gig__seller=request.user,
-            status=Order.Status.COMPLETED
-        ).count()
+    if request.user.role == "buyer":
+        return redirect('my_orders')
 
-        return render(request, 'accounts/seller_dashboard.html', {
-            'gigs': gigs,
-            'completed_orders': completed_orders
-        })
+    elif request.user.role == "seller":
+        return redirect('seller_orders')
 
-    return render(request, 'accounts/buyer_dashboard.html')
+    return redirect('home')
 
+
+# ---------------- PROFILE ----------------
 @login_required
 def profile_view(request):
 
@@ -107,6 +96,8 @@ def profile_view(request):
 
     return render(request, 'accounts/profile.html')
 
+
+# ---------------- EDIT SELLER PROFILE ----------------
 @login_required
 def edit_seller_profile(request):
 
@@ -122,72 +113,66 @@ def edit_seller_profile(request):
         profile.save()
         return redirect('dashboard')
 
-    return render(request, "accounts/edit_seller_profile.html", {"profile": profile})
+    return render(request, "accounts/edit_seller_profile.html", {
+        "profile": profile
+    })
 
-@login_required
-def complete_order(request, order_id):
 
-    order = get_object_or_404(Order, order_id=order_id)
-
-    # Only buyer can complete
-    if request.user != order.buyer:
-        return redirect('home')
-
-    # Prevent double earning
-    if order.status == Order.Status.COMPLETED:
-        return redirect('my_orders')
-
-    order.status = Order.Status.COMPLETED
-    order.completed_at = timezone.now()
-    order.save()
-
-    # 🔥 AUTO EARNINGS CALCULATION
-    seller_profile = order.gig.seller.seller_profile
-    seller_profile.total_earnings += order.amount
-    seller_profile.save()
-
-    return redirect('my_orders')
-
+# ---------------- ADMIN DASHBOARD ----------------
 @staff_member_required
 def admin_dashboard(request):
+
     total_users = User.objects.count()
     total_sellers = User.objects.filter(role='seller').count()
     total_buyers = User.objects.filter(role='buyer').count()
 
     total_gigs = Gig.objects.count()
     total_orders = Order.objects.count()
-    completed_orders = Order.objects.filter(status=Order.Status.COMPLETED).count()
+    completed_orders = Order.objects.filter(
+        status=Order.Status.COMPLETED
+    ).count()
 
     total_revenue = Order.objects.filter(
         status=Order.Status.COMPLETED
     ).aggregate(total=Sum('amount'))['total'] or 0
 
-    # Optional: Platform commission (example 10%)
     platform_commission = total_revenue * 0.10
-    
+
+    # ---------------- Monthly Revenue ----------------
+    monthly_data = (
+        Order.objects.filter(status=Order.Status.COMPLETED)
+        .annotate(month=TruncMonth('completed_at'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    )
+
+    months = []
+    revenues = []
+
+    for entry in monthly_data:
+        months.append(entry['month'].strftime("%b %Y"))
+        revenues.append(float(entry['total']))
+
+    # ---------------- Growth Calculation ----------------
     today = timezone.now()
 
-    # First day of current month
     current_month_start = today.replace(day=1)
-    
-    # First day of previous month
+
     previous_month_end = current_month_start - timedelta(days=1)
     previous_month_start = previous_month_end.replace(day=1)
-    
-    # Current month revenue
+
     current_month_revenue = Order.objects.filter(
         status=Order.Status.COMPLETED,
         completed_at__gte=current_month_start
     ).aggregate(total=Sum('amount'))['total'] or 0
-    
-    # Previous month revenue
+
     previous_month_revenue = Order.objects.filter(
         status=Order.Status.COMPLETED,
         completed_at__gte=previous_month_start,
         completed_at__lt=current_month_start
     ).aggregate(total=Sum('amount'))['total'] or 0
-    
-    # Growth percentage
+
     if previous_month_revenue > 0:
         growth_percentage = (
             (current_month_revenue - previous_month_revenue)
@@ -195,7 +180,8 @@ def admin_dashboard(request):
         ) * 100
     else:
         growth_percentage = 100 if current_month_revenue > 0 else 0
-    
+
+    # ---------------- Top Sellers ----------------
     top_sellers = SellerProfile.objects.select_related('user') \
         .order_by('-total_earnings')[:5]
 
@@ -214,26 +200,6 @@ def admin_dashboard(request):
         'previous_month_revenue': previous_month_revenue,
         'growth_percentage': round(growth_percentage, 1),
         'top_sellers': top_sellers,
-
-
     }
-    
-    # Monthly revenue data
-    monthly_data = (
-        Order.objects.filter(status=Order.Status.COMPLETED)
-        .annotate(month=TruncMonth('completed_at'))
-        .values('month')
-        .annotate(total=Sum('amount'))
-        .order_by('month')
-    )
-
-    months = []
-    revenues = []
-
-    for entry in monthly_data:
-        months.append(entry['month'].strftime("%b %Y"))
-        revenues.append(float(entry['total']))
-
 
     return render(request, "accounts/admin_dashboard.html", context)
-

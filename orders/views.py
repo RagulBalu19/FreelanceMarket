@@ -156,7 +156,7 @@ def payment_success(request):
 
     order = get_object_or_404(Order, order_id=order_id)
     
-    order.escrow_amount = order.amount
+    # order.escrow_amount = order.amount
     order.payment_id = payment_id
     order.status = Order.Status.PAID
     order.save()
@@ -409,6 +409,10 @@ def raise_dispute(request, order_id):
 def compare_submissions(request, order_id):
 
     order = get_object_or_404(Order, order_id=order_id)
+
+    # Only buyer or seller allowed
+    if request.user != order.buyer and request.user != order.gig.seller:
+        return redirect('home')
 
     deliveries = order.deliveries.order_by('-version')
 

@@ -1,17 +1,39 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<div class="container mt-5">
-<h4>Submission Comparison</h4>
+<div class="container mt-4">
+
+<h3>Submission Comparison</h3>
+
+<h5>Gig: {{ order.gig.title }}</h5>
+<hr>
 
 {% for delivery in deliveries %}
-<div class="card p-3 mb-3">
-    <h6>Version {{ delivery.version }}</h6>
+<div class="card mb-3 p-3">
+
+    <h5>
+        Version {{ delivery.version }}
+        {% if forloop.first %}
+            <span class="badge bg-success">Latest</span>
+        {% endif %}
+    </h5>
+
     <p><strong>Message:</strong> {{ delivery.message }}</p>
-    <p><strong>Changes:</strong> {{ delivery.change_log }}</p>
-    <a href="{{ delivery.file.url }}" class="btn btn-info btn-sm">Download</a>
+
+    <p>
+        <strong>Submitted:</strong> {{ delivery.submitted_at }}
+    </p>
+
+    <a href="{{ delivery.file.url }}" 
+       class="btn btn-primary btn-sm">
+        Download File
+    </a>
+
 </div>
+{% empty %}
+<p>No submissions yet.</p>
 {% endfor %}
 
 </div>
+
 {% endblock %}
