@@ -1,22 +1,192 @@
 {% extends 'base.html' %}
+{% block title %}Register – FreelanceMarket{% endblock %}
 
+{% block extra_css %}
+<style>
+.auth-wrapper {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: center;
+    padding: 3rem 0;
+    background: radial-gradient(ellipse 70% 60% at 80% 20%, rgba(233,69,96,0.1) 0%, transparent 70%);
+}
+.auth-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+}
+.auth-title {
+    font-family: var(--font-display);
+    font-size: 1.9rem;
+    font-weight: 900;
+    margin-bottom: 0.3rem;
+}
+.role-card {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.role-card:hover, .role-card.selected {
+    border-color: var(--accent);
+    background: rgba(233,69,96,0.08);
+}
+.role-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="auth-wrapper">
+    <div class="container">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <div class="section-label">Get Started</div>
+                <h1 class="auth-title">Create Account</h1>
+                <p style="color:var(--text-muted);font-size:0.9rem;">Already have an account? <a href="{% url 'login' %}" style="color:var(--accent);font-weight:600;text-decoration:none;">Sign in</a></p>
+            </div>
 
-<div class="row justify-content-center">
-  <div class="col-md-5">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
 
-    <div class="card p-4 shadow">
-      <h3 class="text-center mb-3">Register</h3>
+                <!-- Username -->
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="fm-form-control w-100"
+                           value="{{ form.username.value|default:'' }}"
+                           placeholder="Choose a username" required>
+                    {% if form.username.errors %}
+                    <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
 
-      <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-success w-100">Register</button>
-      </form>
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="fm-form-control w-100"
+                           value="{{ form.email.value|default:'' }}"
+                           placeholder="your@email.com" required>
+                    {% if form.email.errors %}
+                    <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Role -->
+                <div class="mb-3">
+                    <label class="form-label">I want to</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="role-card" id="roleCardBuyer" onclick="selectRole('buyer')">
+                                <div class="role-icon" style="background:rgba(13,202,240,0.12);color:#0dcaf0;">
+                                    <i class="bi bi-bag"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:600;font-size:0.9rem;">Hire Talent</div>
+                                    <div style="color:var(--text-muted);font-size:0.78rem;">I'm a buyer</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="role-card" id="roleCardSeller" onclick="selectRole('seller')">
+                                <div class="role-icon" style="background:rgba(233,69,96,0.12);color:var(--accent);">
+                                    <i class="bi bi-briefcase"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:600;font-size:0.9rem;">Offer Services</div>
+                                    <div style="color:var(--text-muted);font-size:0.78rem;">I'm a seller</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <select name="role" id="roleSelect" class="fm-form-control w-100 mt-2" style="display:none;">
+                        <option value="buyer">Buyer</option>
+                        <option value="seller">Seller</option>
+                    </select>
+                    {% if form.role.errors %}
+                    <div class="text-danger small mt-1">{{ form.role.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Bio -->
+                <div class="mb-3">
+                    <label class="form-label">Bio <span style="color:var(--text-muted)">(optional)</span></label>
+                    <textarea name="bio" class="fm-form-control w-100" rows="2" placeholder="Tell us about yourself...">{{ form.bio.value|default:'' }}</textarea>
+                </div>
+
+                <!-- Profile Pic -->
+                <div class="mb-3">
+                    <label class="form-label">Profile Picture <span style="color:var(--text-muted)">(optional)</span></label>
+                    <input type="file" name="profile_pic" class="fm-form-control w-100" accept="image/*">
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <div class="position-relative">
+                        <input type="password" name="password1" id="pw1" class="fm-form-control w-100" placeholder="Min. 8 characters" required>
+                        <span onclick="togglePw('pw1',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password1.errors %}
+                    <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="position-relative">
+                        <input type="password" name="password2" id="pw2" class="fm-form-control w-100" placeholder="Repeat password" required>
+                        <span onclick="togglePw('pw2',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);">
+                            <i class="bi bi-eye"></i>
+                        </span>
+                    </div>
+                    {% if form.password2.errors %}
+                    <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-2">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-accent w-100 py-2" style="font-size:1rem;">
+                    Create Account <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </form>
+        </div>
     </div>
-
-  </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+let selectedRole = 'buyer';
+function selectRole(role) {
+    selectedRole = role;
+    document.getElementById('roleSelect').value = role;
+    document.getElementById('roleCardBuyer').classList.toggle('selected', role === 'buyer');
+    document.getElementById('roleCardSeller').classList.toggle('selected', role === 'seller');
+}
+function togglePw(id, el) {
+    const input = document.getElementById(id);
+    const icon = el.querySelector('i');
+    if (input.type === 'password') { input.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+    else { input.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+selectRole('buyer');
+</script>
 {% endblock %}

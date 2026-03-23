@@ -1,178 +1,168 @@
 {% extends 'base.html' %}
+{% block title %}Admin Dashboard – FreelanceMarket{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-section { margin-bottom: 2.5rem; }
+</style>
+{% endblock %}
+
 {% block content %}
-
-<div class="container mt-5">
-
-<h2 class="mb-4">Admin Analytics Dashboard 📊</h2>
-
-<div class="row">
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Total Users</h5>
-      <h3>{{ total_users }}</h3>
+<div class="page-header">
+    <div class="container">
+        <div class="section-label">Staff Only</div>
+        <h1>Admin Dashboard</h1>
     </div>
-  </div>
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Total Sellers</h5>
-      <h3>{{ total_sellers }}</h3>
-    </div>
-  </div>
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Total Buyers</h5>
-      <h3>{{ total_buyers }}</h3>
-    </div>
-  </div>
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Total Gigs</h5>
-      <h3>{{ total_gigs }}</h3>
-    </div>
-  </div>
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Total Orders</h5>
-      <h3>{{ total_orders }}</h3>
-    </div>
-  </div>
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Completed Orders</h5>
-      <h3>{{ completed_orders }}</h3>
-    </div>
-  </div>
-
-  <div class="col-md-6 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Total Revenue</h5>
-      <h3 class="text-success">₹ {{ total_revenue }}</h3>
-    </div>
-  </div>
-
-  <div class="col-md-6 mb-3">
-    <div class="card p-3 shadow">
-      <h5>Platform Commission (10%)</h5>
-      <h3 class="text-danger">₹ {{ platform_commission }}</h3>
-    </div>
-  </div>
-
 </div>
 
-</div>
-<hr class="my-4">
+<div class="container pb-5">
 
-<h4 class="mb-3">Revenue Comparison 📊</h4>
-
-<div class="row">
-
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h6>This Month</h6>
-      <h4 class="text-success">₹ {{ current_month_revenue }}</h4>
+    <!-- Stats -->
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value" style="color:var(--accent2);">{{ total_gigs }}</div>
+                <div class="stat-label">Total Gigs</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value" style="color:#6ea8fe;">{{ total_orders }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-value" style="color:var(--accent);">{{ open_disputes }}</div>
+                <div class="stat-label">Open Disputes</div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h6>Previous Month</h6>
-      <h4>₹ {{ previous_month_revenue }}</h4>
+    <!-- Disputed Orders -->
+    <div class="admin-section">
+        <h5 style="font-weight:700;margin-bottom:1rem;">
+            <i class="bi bi-flag me-2" style="color:var(--accent);"></i>Open Disputes
+        </h5>
+        {% if disputed_orders %}
+        <div class="fm-card p-0" style="overflow:hidden;">
+            <div class="table-responsive">
+                <table class="fm-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-left:1.5rem;">Order</th>
+                            <th>Gig</th>
+                            <th>Buyer</th>
+                            <th>Amount</th>
+                            <th>Dispute Reason</th>
+                            <th style="padding-right:1.5rem;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in disputed_orders %}
+                        <tr>
+                            <td style="padding-left:1.5rem;font-family:monospace;font-size:0.78rem;color:var(--text-muted);">{{ order.order_id|stringformat:"s"|slice:":8" }}…</td>
+                            <td style="font-weight:500;font-size:0.88rem;">{{ order.gig.title|truncatechars:30 }}</td>
+                            <td>{{ order.buyer.username }}</td>
+                            <td style="color:var(--accent2);font-weight:600;">₹{{ order.amount }}</td>
+                            <td style="color:var(--text-muted);font-size:0.83rem;">{{ order.dispute.reason|truncatechars:50 }}</td>
+                            <td style="padding-right:1.5rem;">
+                                <a href="{% url 'resolve_dispute' order.order_id %}" class="btn btn-sm btn-accent">Resolve</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="fm-card text-center py-4" style="color:var(--text-muted);">
+            <i class="bi bi-check-circle me-2"></i>No open disputes
+        </div>
+        {% endif %}
     </div>
-  </div>
 
-  <div class="col-md-4 mb-3">
-    <div class="card p-3 shadow">
-      <h6>Growth</h6>
-      {% if growth_percentage > 0 %}
-        <h4 class="text-success">+{{ growth_percentage }}%</h4>
-      {% elif growth_percentage < 0 %}
-        <h4 class="text-danger">{{ growth_percentage }}%</h4>
-      {% else %}
-        <h4>0%</h4>
-      {% endif %}
+    <!-- All Orders -->
+    <div class="admin-section">
+        <h5 style="font-weight:700;margin-bottom:1rem;">
+            <i class="bi bi-list-ul me-2" style="color:#6ea8fe;"></i>Recent Orders
+        </h5>
+        <div class="fm-card p-0" style="overflow:hidden;">
+            <div class="table-responsive">
+                <table class="fm-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-left:1.5rem;">Order ID</th>
+                            <th>Gig</th>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th style="padding-right:1.5rem;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in all_orders %}
+                        <tr>
+                            <td style="padding-left:1.5rem;font-family:monospace;font-size:0.78rem;color:var(--text-muted);">{{ order.order_id|stringformat:"s"|slice:":8" }}…</td>
+                            <td style="font-size:0.88rem;">{{ order.gig.title|truncatechars:25 }}</td>
+                            <td style="font-size:0.85rem;">{{ order.buyer.username }}</td>
+                            <td style="font-size:0.85rem;">{{ order.gig.seller.username }}</td>
+                            <td style="color:var(--accent2);font-weight:600;">₹{{ order.amount }}</td>
+                            <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                            <td style="padding-right:1.5rem;color:var(--text-muted);font-size:0.82rem;">{{ order.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7" class="text-center py-4" style="color:var(--text-muted);">No orders yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
+    <!-- Users Table -->
+    <div class="admin-section">
+        <h5 style="font-weight:700;margin-bottom:1rem;">
+            <i class="bi bi-people me-2" style="color:#75b798;"></i>All Users
+        </h5>
+        <div class="fm-card p-0" style="overflow:hidden;">
+            <div class="table-responsive">
+                <table class="fm-table">
+                    <thead>
+                        <tr>
+                            <th style="padding-left:1.5rem;">Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in all_users %}
+                        <tr>
+                            <td style="padding-left:1.5rem;font-weight:500;">{{ u.username }}</td>
+                            <td style="color:var(--text-muted);font-size:0.85rem;">{{ u.email }}</td>
+                            <td>
+                                <span class="status-badge" style="{% if u.role == 'seller' %}background:rgba(233,69,96,0.12);color:var(--accent);{% else %}background:rgba(13,202,240,0.12);color:#0dcaf0;{% endif %}">{{ u.role|title }}</span>
+                            </td>
+                            <td style="color:var(--text-muted);font-size:0.84rem;">{{ u.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Link to Django Admin -->
+    <a href="/admin/" class="btn btn-outline-accent" target="_blank">
+        <i class="bi bi-gear me-1"></i>Django Admin Panel
+    </a>
 </div>
-
-
-<hr class="my-5">
-
-<h4 class="mb-3">🏆 Top Sellers Leaderboard</h4>
-
-<div class="card p-3 shadow">
-
-<table class="table table-striped">
-<thead>
-<tr>
-  <th>Rank</th>
-  <th>Seller</th>
-  <th>Total Earnings</th>
-  <th>Rating</th>
-</tr>
-</thead>
-
-<tbody>
-{% for seller in top_sellers %}
-<tr>
-  <td>
-    {% if forloop.counter == 1 %}🥇
-    {% elif forloop.counter == 2 %}🥈
-    {% elif forloop.counter == 3 %}🥉
-    {% else %}{{ forloop.counter }}
-    {% endif %}
-  </td>
-  <td>{{ seller.user.username }}</td>
-  <td class="text-success">₹ {{ seller.total_earnings }}</td>
-  <td>⭐ {{ seller.rating }}</td>
-</tr>
-{% empty %}
-<tr>
-  <td colspan="4">No sellers yet</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-
-</div>
-
-<hr class="my-5">
-
-<h4 class="mb-3">Monthly Revenue Chart 📈</h4>
-
-<canvas id="revenueChart"></canvas>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-const ctx = document.getElementById('revenueChart').getContext('2d');
-
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: {{ months|safe }},
-        datasets: [{
-            label: 'Revenue (₹)',
-            data: {{ revenues|safe }},
-            borderWidth: 1
-        }]
-    },
-    options: {
-        responsive: true,
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-</script>
-
-
 {% endblock %}

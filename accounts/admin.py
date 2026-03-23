@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
-from .models import SellerProfile
+from .models import User,Skill,FreelancerSkill
+from .models import SellerProfile, CodingProblem, TestCase
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -37,4 +37,10 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(SellerProfile)
 class SellerProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'skills', 'experience', 'rating', 'total_earnings')
+    list_display = ('user',)#, 'skills', 'experience', 'rating', 'total_earnings')
+
+admin.site.register(Skill)
+admin.site.register(CodingProblem)
+admin.site.register(TestCase)
+admin.site.register(FreelancerSkill)
+# admin.site.register(Submission)

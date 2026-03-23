@@ -1,24 +1,65 @@
 {% extends 'base.html' %}
+{% block title %}Deliver Order – FreelanceMarket{% endblock %}
+
 {% block content %}
+<div class="container py-5" style="max-width:640px;">
+    <div class="mb-4">
+        <div class="section-label">Seller</div>
+        <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:900;">Deliver Your Work</h1>
+        <p style="color:var(--text-muted);">Upload your completed work for: <strong>{{ order.gig.title }}</strong></p>
+    </div>
 
-<div class="container mt-5">
-<div class="card p-4 shadow col-md-6 mx-auto">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="fm-card">
+            <!-- File Upload -->
+            <div class="mb-4">
+                <label class="form-label">Delivery File *</label>
+                <div id="dropArea" style="border:2px dashed var(--border);border-radius:12px;padding:2.5rem;text-align:center;cursor:pointer;transition:border-color 0.2s;"
+                     onclick="document.getElementById('fileInput').click()">
+                    <i class="bi bi-cloud-upload" style="font-size:2.5rem;color:var(--text-muted);display:block;margin-bottom:0.6rem;"></i>
+                    <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Click to upload or drag and drop</p>
+                    <p style="color:var(--text-muted);font-size:0.78rem;margin:0.3rem 0 0;">Any file type accepted</p>
+                    <div id="fileLabel" style="color:var(--accent);font-size:0.85rem;margin-top:0.5rem;font-weight:500;"></div>
+                </div>
+                <input type="file" name="file" id="fileInput" style="display:none;" onchange="updateLabel(this)" required>
+            </div>
 
-<h4>Submit Delivery</h4>
+            <!-- Message -->
+            <div class="mb-4">
+                <label class="form-label">Delivery Message</label>
+                <textarea name="message" class="fm-form-control w-100" rows="4"
+                          placeholder="Describe what you've delivered, any notes for the buyer, or instructions on how to use the deliverable..."></textarea>
+            </div>
 
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
+            <div class="alert alert-info mb-4" style="font-size:0.85rem;">
+                <i class="bi bi-info-circle me-2"></i>
+                The order status will change to <strong>Submitted</strong> after delivery. The buyer can then approve, request revision, or raise a dispute.
+            </div>
 
-    <label>Upload File</label>
-    <input type="file" name="file" class="form-control mb-3" required>
-
-    <label>Message</label>
-    <textarea name="message" class="form-control mb-3"></textarea>
-
-    <button class="btn btn-primary w-100">Submit Work</button>
-</form>
-
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-accent" style="padding:0.7rem 2rem;font-size:1rem;">
+                    <i class="bi bi-upload me-1"></i>Submit Delivery
+                </button>
+                <a href="{% url 'seller_orders' %}" class="btn btn-outline-accent" style="padding:0.7rem 1.5rem;">Cancel</a>
+            </div>
+        </div>
+    </form>
 </div>
-</div>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+function updateLabel(input) {
+    document.getElementById('fileLabel').textContent = input.files[0] ? input.files[0].name : '';
+}
+const dropArea = document.getElementById('dropArea');
+dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.style.borderColor='var(--accent)'; });
+dropArea.addEventListener('dragleave', () => { dropArea.style.borderColor='var(--border)'; });
+dropArea.addEventListener('drop', e => {
+    e.preventDefault(); dropArea.style.borderColor='var(--border)';
+    const dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]);
+    const input = document.getElementById('fileInput'); input.files = dt.files; updateLabel(input);
+});
+</script>
 {% endblock %}

@@ -1,113 +1,128 @@
 {% extends 'base.html' %}
+{% block title %}Seller Orders – FreelanceMarket{% endblock %}
+
 {% block content %}
-
-<div class="container mt-4">
-
-<h3>Seller Orders</h3>
-
-<table class="table table-striped bg-white">
-<thead>
-<tr>
-  <th>Gig</th>
-  <th>Buyer</th>
-  <th>Amount</th>
-  <th>Status</th>
-  <th>Requirements</th>
-  <th>Deadline</th>
-  <th>Actions</th>
-</tr>
-</thead>
-
-<tbody>
-{% for order in orders %}
-<tr>
-  <td>{{ order.gig.title }}</td>
-  <td>{{ order.buyer.username }}</td>
-  <td>₹ {{ order.amount }}</td>
-  <td>{{ order.status }}</td>
-  <td>{{ order.requirements }}</td>
-  <td>{{ order.deadline }}</td>
-
-  <td>
-
-    <!-- Start Work (After Payment) -->
-    {% if order.status == 'PAID' %}
-      <a href="{% url 'start_order' order.order_id %}" 
-         class="btn btn-primary btn-sm">
-         Start Work
-      </a>
-    {% endif %}
-
-    <!-- Chat Button -->
-    <a href="{% url 'order_chat' order.order_id %}" 
-       class="btn btn-secondary btn-sm">
-       Chat
-    </a>
-
-    <!-- Deliver Button -->
-    {% if order.status == 'IN_PROGRESS' or order.status == 'REVISION' %}
-      <a href="{% url 'deliver_order' order.order_id %}" 
-         class="btn btn-success btn-sm">
-         Deliver
-      </a>
-    {% endif %}
-
-    <!-- Rework Button -->
-    {% if order.status == 'REVISION' %}
-      <a href="{% url 'start_order' order.order_id %}" 
-         class="btn btn-info btn-sm">
-         Rework
-      </a>
-    {% endif %}
-
-    <!-- Extend Deadline -->
-    {% if order.status == 'OVERDUE' %}
-      <a href="{% url 'extend_deadline' order.order_id %}" 
-         class="btn btn-warning btn-sm">
-         Extend
-      </a>
-    {% endif %}
-
-</td>
-
-</tr>
-
-<!-- Revision Reason -->
-{% if order.status == 'REVISION' %}
-<tr>
-  <td colspan="7" class="text-danger">
-    <strong>Revision Reason:</strong> {{ order.revision_reason }}
-  </td>
-</tr>
-{% endif %}
-
-<!-- Delivery History -->
-{% if order.deliveries.all %}
-<tr>
-  <td colspan="7">
-    <strong>Delivery History:</strong>
-    <ul>
-      {% for delivery in order.deliveries.all %}
-        <li>
-          Version {{ delivery.version }} -
-          <a href="{{ delivery.file.url }}">Download</a>
-          ({{ delivery.submitted_at }})
-        </li>
-      {% endfor %}
-    </ul>
-  </td>
-</tr>
-{% endif %}
-
-{% empty %}
-<tr>
-  <td colspan="7">No orders yet</td>
-</tr>
-{% endfor %}
-</tbody>
-
-</table>
-
+<div class="page-header">
+    <div class="container">
+        <div class="section-label">Seller</div>
+        <h1>My Orders</h1>
+        <p style="color:var(--text-muted);">Manage and deliver your active orders</p>
+    </div>
 </div>
 
+<div class="container pb-5">
+    <!-- Filter Tabs -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <button class="cat-pill active-pill" onclick="filterStatus('all', this)">All</button>
+        <button class="cat-pill" onclick="filterStatus('PAID', this)">New Orders</button>
+        <button class="cat-pill" onclick="filterStatus('IN_PROGRESS', this)">In Progress</button>
+        <button class="cat-pill" onclick="filterStatus('SUBMITTED', this)">Submitted</button>
+        <button class="cat-pill" onclick="filterStatus('REVISION', this)">Revision</button>
+        <button class="cat-pill" onclick="filterStatus('COMPLETED', this)">Completed</button>
+        <button class="cat-pill" onclick="filterStatus('DISPUTED', this)">Disputed</button>
+    </div>
+
+    {% if orders %}
+    <div class="row g-3" id="ordersGrid">
+        {% for order in orders %}
+        <div class="col-12 order-card-wrap" data-status="{{ order.status }}">
+            <div class="fm-card" style="padding:1.2rem 1.5rem;">
+                <div class="row align-items-center g-3">
+                    <!-- Order Info -->
+                    <div class="col-md-5">
+                        <div style="font-family:monospace;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.3rem;">
+                            #{{ order.order_id|stringformat:"s"|slice:":8" }}…
+                        </div>
+                        <a href="{% url 'gig_detail' order.gig.slug %}" style="font-weight:700;color:var(--text-main);text-decoration:none;font-size:0.95rem;">
+                            {{ order.gig.title|truncatechars:40 }}
+                        </a>
+                        <div style="color:var(--text-muted);font-size:0.83rem;margin-top:0.2rem;">
+                            <i class="bi bi-person me-1"></i>{{ order.buyer.username }}
+                            &nbsp;·&nbsp;
+                            <i class="bi bi-calendar me-1"></i>{{ order.created_at|date:"M d, Y" }}
+                        </div>
+                        {% if order.deadline %}
+                        <div style="font-size:0.82rem;margin-top:0.3rem;">
+                            <i class="bi bi-clock me-1" style="color:{% if order.is_overdue %}var(--accent){% else %}var(--text-muted){% endif %};"></i>
+                            <span style="color:{% if order.is_overdue %}var(--accent){% else %}var(--text-muted){% endif %};">
+                                Deadline: {{ order.deadline }}{% if order.is_overdue %} – OVERDUE{% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status + Amount -->
+                    <div class="col-md-3 d-flex flex-column gap-1">
+                        <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                        <span style="color:var(--accent2);font-weight:700;font-size:1.1rem;">₹{{ order.amount }}</span>
+                        {% if order.revision_count > 0 %}
+                        <span style="font-size:0.78rem;color:var(--text-muted);">Revisions: {{ order.revision_count }}/{{ order.max_revisions }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="col-md-4 d-flex flex-wrap gap-2 justify-content-md-end">
+                        <a href="{% url 'order_chat' order.order_id %}" class="btn btn-sm btn-outline-accent">
+                            <i class="bi bi-chat me-1"></i>Chat
+                        </a>
+
+                        {% if order.status == 'PAID' %}
+                        <form method="post" action="{% url 'start_order' order.order_id %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-gold">▶ Start</button>
+                        </form>
+                        {% endif %}
+
+                        {% if order.status == 'IN_PROGRESS' or order.status == 'REVISION' %}
+                        <a href="{% url 'deliver_order' order.order_id %}" class="btn btn-sm btn-accent">
+                            <i class="bi bi-upload me-1"></i>Deliver
+                        </a>
+                        <a href="{% url 'extend_deadline' order.order_id %}" class="btn btn-sm" style="border:1px solid var(--border);color:var(--text-muted);border-radius:8px;font-size:0.8rem;">Extend</a>
+                        {% endif %}
+
+                        {% if order.status == 'SUBMITTED' %}
+                        <a href="{% url 'compare_submissions' order.order_id %}" class="btn btn-sm" style="border:1px solid var(--border);color:var(--text-muted);border-radius:8px;">
+                            <i class="bi bi-files"></i> Compare
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if order.revision_reason %}
+                <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size:0.84rem;">
+                    <i class="bi bi-arrow-return-left me-1"></i>
+                    <strong>Revision reason:</strong> {{ order.revision_reason }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-briefcase" style="font-size:3.5rem;display:block;margin-bottom:1rem;opacity:0.4;"></i>
+        <h5>No orders yet</h5>
+        <p>Post a gig to start receiving orders.</p>
+        <a href="{% url 'create_gig' %}" class="btn btn-accent mt-2">Post a Gig</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.active-pill { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterStatus(status, btn) {
+    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active-pill'));
+    btn.classList.add('active-pill');
+    document.querySelectorAll('.order-card-wrap').forEach(el => {
+        el.style.display = (status === 'all' || el.dataset.status === status) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}

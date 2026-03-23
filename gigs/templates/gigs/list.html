@@ -1,44 +1,117 @@
 {% extends 'base.html' %}
-
-
+{% block title %}Browse Gigs – FreelanceMarket{% endblock %}
 
 {% block content %}
-
-<h3 class="mb-4">All Gigs</h3>
-
-<div class="container mt-5">
-  <div class="row">
-
-    {% for gig in gigs %}
-    <div class="col-md-4 mb-4">
-
-      <div class="card shadow h-100">
-
-        {% if gig.image %}
-        <img src="{{ gig.image.url }}" class="card-img-top" style="height:200px; object-fit:cover;">
-        {% endif %}
-
-        <div class="card-body">
-
-          <h5>{{ gig.title }}</h5>
-
-          <p class="text-muted">
-            ₹ {{ gig.price }}
-          </p>
-
-          <a href="{% url 'gig_detail' gig.slug %}"
-             class="btn btn-dark w-100">
-             View Details
-          </a>
-
-        </div>
-
-      </div>
-
+<div class="page-header">
+    <div class="container">
+        <div class="section-label">Marketplace</div>
+        <h1>Browse All Gigs</h1>
+        <p style="color:var(--text-muted);margin-top:0.4rem;">Discover verified freelance services across every category</p>
     </div>
-    {% endfor %}
-
-  </div>
 </div>
 
+<div class="container pb-5">
+    <!-- Search & Filter Bar -->
+    <div class="d-flex gap-3 flex-wrap align-items-center mb-4">
+        <div class="flex-grow-1" style="max-width:380px;">
+            <div class="position-relative">
+                <input type="text" id="searchInput" class="fm-form-control w-100" placeholder="Search gigs..." style="padding-left:2.5rem;">
+                <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+            </div>
+        </div>
+        <select id="sortSelect" class="fm-form-control" style="width:auto;">
+            <option value="">Sort by Default</option>
+            <option value="price_asc">Price: Low → High</option>
+            <option value="price_desc">Price: High → Low</option>
+            <option value="newest">Newest</option>
+        </select>
+        <div class="ms-auto" style="color:var(--text-muted);font-size:0.88rem;">
+            <span id="countLabel">{{ gigs|length }}</span> gigs found
+        </div>
+    </div>
+
+    <!-- Gig Grid -->
+    <div class="row g-4" id="gigsGrid">
+        {% for gig in gigs %}
+        <div class="col-sm-6 col-lg-4 col-xl-3 gig-item"
+             data-title="{{ gig.title|lower }}"
+             data-price="{{ gig.price }}">
+            <a href="{% url 'gig_detail' gig.slug %}" class="text-decoration-none h-100">
+                <div class="gig-card">
+                    {% if gig.image %}
+                    <img src="{{ gig.image.url }}" alt="{{ gig.title }}">
+                    {% else %}
+                    <div style="height:190px;background:linear-gradient(135deg,var(--surface),var(--card-bg));display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-image" style="font-size:2.5rem;color:var(--border);"></i>
+                    </div>
+                    {% endif %}
+                    <div class="gig-card-body">
+                        <p class="gig-seller mb-1">
+                            <i class="bi bi-person-circle me-1"></i>{{ gig.seller.username }}
+                        </p>
+                        <h6 style="font-weight:600;color:var(--text-main);font-size:0.94rem;line-height:1.45;flex:1;">{{ gig.title }}</h6>
+                        <p style="color:var(--text-muted);font-size:0.82rem;line-height:1.5;margin-top:0.4rem;">{{ gig.description|truncatechars:80 }}</p>
+                        <div class="d-flex align-items-center justify-content-between mt-auto pt-2" style="border-top:1px solid var(--border);margin-top:auto;">
+                            <span class="gig-price">From ₹{{ gig.price }}</span>
+                            <span style="color:var(--accent);font-size:0.8rem;font-weight:600;">Order Now →</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5" style="color:var(--text-muted);">
+                <i class="bi bi-grid" style="font-size:3rem;display:block;margin-bottom:1rem;"></i>
+                <h5>No gigs available yet</h5>
+                <p>Be the first to post a gig!</p>
+                {% if user.is_authenticated and user.role == 'seller' %}
+                <a href="{% url 'create_gig' %}" class="btn btn-accent mt-2">Post a Gig</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- No Results Message -->
+    <div id="noResults" class="text-center py-5" style="display:none;color:var(--text-muted);">
+        <i class="bi bi-search" style="font-size:2.5rem;display:block;margin-bottom:0.7rem;"></i>
+        No gigs match your search.
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sortSelect');
+const grid = document.getElementById('gigsGrid');
+const noResults = document.getElementById('noResults');
+const countLabel = document.getElementById('countLabel');
+
+function filterAndSort() {
+    const q = searchInput.value.toLowerCase().trim();
+    const sort = sortSelect.value;
+    const items = [...grid.querySelectorAll('.gig-item')];
+
+    // Filter
+    let visible = items.filter(el => {
+        const match = !q || el.dataset.title.includes(q);
+        el.style.display = match ? '' : 'none';
+        return match;
+    });
+
+    // Sort
+    if (sort === 'price_asc') visible.sort((a,b) => +a.dataset.price - +b.dataset.price);
+    if (sort === 'price_desc') visible.sort((a,b) => +b.dataset.price - +a.dataset.price);
+
+    visible.forEach(el => grid.appendChild(el));
+
+    countLabel.textContent = visible.length;
+    noResults.style.display = visible.length ? 'none' : 'block';
+}
+
+searchInput.addEventListener('input', filterAndSort);
+sortSelect.addEventListener('change', filterAndSort);
+</script>
 {% endblock %}

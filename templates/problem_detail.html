@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}{{ problem.title }} – Skill Test{% endblock %}
+
+{% block extra_css %}
+<style>
+.code-editor {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #c9d1d9;
+    resize: vertical;
+    min-height: 280px;
+    width: 100%;
+    line-height: 1.6;
+    outline: none;
+}
+.code-editor:focus { border-color: var(--accent); }
+.sample-box {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #c9d1d9;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <!-- Problem -->
+        <div class="col-lg-6">
+            <div class="mb-3">
+                <div class="section-label">Skill Test</div>
+                <h1 style="font-family:var(--font-display);font-size:1.8rem;font-weight:900;">{{ problem.title }}</h1>
+                <div class="d-flex gap-2 flex-wrap mt-2">
+                    <span class="status-badge" style="{% if problem.difficulty == 'easy' %}background:rgba(25,135,84,0.15);color:#75b798;{% elif problem.difficulty == 'medium' %}background:rgba(255,193,7,0.15);color:#ffc107;{% else %}background:rgba(220,53,69,0.15);color:#ea868f;{% endif %}">{{ problem.difficulty|title }}</span>
+                    <span class="status-badge" style="background:rgba(13,202,240,0.12);color:#0dcaf0;">{{ problem.language|upper }}</span>
+                    <span class="status-badge" style="background:rgba(255,255,255,0.05);color:var(--text-muted);">{{ problem.skill.name }}</span>
+                </div>
+            </div>
+
+            <div class="fm-card mb-4">
+                <h6 style="font-weight:700;margin-bottom:0.8rem;">Problem Description</h6>
+                <p style="color:var(--text-muted);line-height:1.7;white-space:pre-line;">{{ problem.description }}</p>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="fm-card">
+                        <h6 style="font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;">Sample Input</h6>
+                        <div class="sample-box">{{ problem.sample_input }}</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="fm-card">
+                        <h6 style="font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;">Sample Output</h6>
+                        <div class="sample-box">{{ problem.sample_output }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fm-card mt-3" style="background:rgba(255,193,7,0.06);border-color:rgba(255,193,7,0.2);">
+                <div class="d-flex gap-3">
+                    <i class="bi bi-info-circle" style="color:#ffc107;font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
+                    <div style="font-size:0.85rem;color:var(--text-muted);">
+                        You must score at least <strong style="color:#ffc107;">{{ problem.min_score }}%</strong> to verify this skill.
+                        You have <strong style="color:#ffc107;">{{ problem.max_attempts }}</strong> attempts.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Editor -->
+        <div class="col-lg-6">
+            <div class="fm-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h6 style="font-weight:700;margin:0;">Your Solution</h6>
+                    <span style="font-size:0.78rem;color:var(--text-muted);background:rgba(255,255,255,0.04);padding:0.2rem 0.7rem;border-radius:6px;">{{ problem.language|upper }}</span>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <textarea name="code" class="code-editor mb-3" placeholder="# Write your solution here...
+"></textarea>
+                    <button type="submit" class="btn btn-accent w-100" style="padding:0.75rem;font-size:1rem;">
+                        <i class="bi bi-play-fill me-2"></i>Run & Submit
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

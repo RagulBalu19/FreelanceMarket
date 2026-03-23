@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 import uuid
+from django.contrib.auth.models import User
+from gigs.models import Gig
 
 
 # =========================
@@ -26,6 +28,8 @@ class Order(models.Model):
     )
 
     buyer = models.ForeignKey(
+        # User, 
+        # related_name="orders",
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='orders'
@@ -37,7 +41,7 @@ class Order(models.Model):
         related_name='orders'
     )
 
-    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     requirements = models.TextField(blank=True, null=True)
     deadline = models.DateField(blank=True, null=True)

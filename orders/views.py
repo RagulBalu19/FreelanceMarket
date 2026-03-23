@@ -6,10 +6,10 @@ from django.db.models import Avg
 import razorpay
 from django.contrib.admin.views.decorators import staff_member_required
 
-
+from decimal import Decimal
 from .models import Order, Delivery, Review, Message, Dispute
 from gigs.models import Gig
-from accounts.models import Notification
+from accounts.models import Notification, SellerProfile
 
 
 # ========================
@@ -48,7 +48,7 @@ def check_overdue_orders():
         order.is_overdue = True
 
         # 🔥 Optional penalty (5%)
-        penalty = order.amount * 0.05
+        penalty = order.amount * Decimal(0.05)
         order.penalty_amount = penalty
 
         order.system_note = "Deadline crossed. Order marked overdue automatically."
@@ -248,52 +248,65 @@ def complete_order(request, order_id):
         order.escrow_amount = 0
 
     order.save()
+    
+    from accounts.models import SellerProfile
 
+    seller_profile = SellerProfile.objects.get(user=order.gig.seller)
+    
+    seller_profile.total_earnings += order.amount
+    seller_profile.save()
     return redirect("my_orders")
 
 # ========================
 # Add Review
 # ========================
 @login_required
-def add_review(request, order_id):
+def leave_review(request, order_id):
 
     order = get_object_or_404(Order, order_id=order_id)
 
     if request.user != order.buyer:
-        return redirect("home")
-
-    if order.status != Order.Status.COMPLETED:
-        return redirect("my_orders")
-
-    if hasattr(order, "review"):
-        return redirect("my_orders")
+        return redirect("dashboard")
 
     if request.method == "POST":
 
         rating = int(request.POST.get("rating"))
         comment = request.POST.get("comment")
 
-        Review.objects.create(
+        seller_user = order.gig.seller
+
+        # SAFE create or update review
+        review, created = Review.objects.get_or_create(
             order=order,
-            seller=order.gig.seller,
-            buyer=request.user,
-            rating=rating,
-            comment=comment
+            defaults={
+                "buyer": request.user,
+                "seller": seller_user,
+                "rating": rating,
+                "comment": comment
+            }
         )
 
-        avg_rating = Review.objects.filter(
-            seller=order.gig.seller
-        ).aggregate(Avg("rating"))["rating__avg"]
+        if not created:
+            review.rating = rating
+            review.comment = comment
+            review.save()
 
-        seller_profile = order.gig.seller.seller_profile
+        # update seller profile rating
+        from django.db.models import Avg
+        from accounts.models import SellerProfile
+
+        seller_profile = SellerProfile.objects.get(user=seller_user)
+
+        avg_rating = Review.objects.filter(
+            seller=seller_user
+        ).aggregate(avg=Avg("rating"))["avg"] or 0
+
         seller_profile.rating = round(avg_rating, 1)
         seller_profile.save()
 
-        return redirect("my_orders")
+        return redirect("leaderboard")
 
     return render(request, "orders/add_review.html", {"order": order})
-
-
 # ========================
 # Notifications View
 # ========================
@@ -500,8 +513,8 @@ def extend_deadline(request, order_id):
 
     order = get_object_or_404(Order, order_id=order_id)
 
-    if request.user != order.buyer:
-        return redirect("home")
+    if request.user != order.gig.seller:
+        return redirect("dashboard")
 
     if request.method == "POST":
 
@@ -518,6 +531,57 @@ def extend_deadline(request, order_id):
             f"Deadline extended for {order.gig.title}"
         )
 
-        return redirect("my_orders")
+        return redirect("seller_orders")
 
     return render(request, "orders/extend_deadline.html", {"order": order})
+
+@login_required
+def start_order(request, order_id):
+
+    order = get_object_or_404(
+        Order,
+        order_id=order_id
+    )
+
+    if request.user == order.gig.seller and order.status == Order.Status.PAID:
+
+        order.status = Order.Status.IN_PROGRESS
+        order.started_at = timezone.now()
+        order.save()
+
+    return redirect("dashboard")
+
+
+
+@login_required
+def submit_order(request, order_id):
+
+    order = get_object_or_404(
+        Order,
+        order_id=order_id
+    )
+
+    if request.user == order.gig.seller and order.status == Order.Status.IN_PROGRESS:
+
+        order.status = Order.Status.SUBMITTED
+        order.save()
+
+    return redirect("dashboard")
+
+
+
+@login_required
+def complete_order(request, order_id):
+
+    order = get_object_or_404(
+        Order,
+        order_id=order_id
+    )
+
+    if request.user == order.buyer and order.status == Order.Status.SUBMITTED:
+
+        order.status = Order.Status.COMPLETED
+        order.completed_at = timezone.now()
+        order.save()
+
+    return redirect("dashboard")

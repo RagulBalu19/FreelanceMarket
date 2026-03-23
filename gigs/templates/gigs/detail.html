@@ -1,34 +1,147 @@
 {% extends 'base.html' %}
+{% block title %}{{ gig.title }} – FreelanceMarket{% endblock %}
+
+{% block extra_css %}
+<style>
+.gig-hero-img {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+.seller-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    position: sticky;
+    top: 80px;
+}
+.order-price {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: var(--accent2);
+}
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="container py-5">
+    <div class="row g-5">
 
-<div class="container mt-4">
+        <!-- LEFT: Gig Details -->
+        <div class="col-lg-8">
+            <!-- Breadcrumb -->
+            <nav style="margin-bottom:1.5rem;">
+                <a href="{% url 'gig_list' %}" style="color:var(--text-muted);text-decoration:none;font-size:0.88rem;">
+                    <i class="bi bi-arrow-left me-1"></i>Browse Gigs
+                </a>
+            </nav>
 
-  <div class="card p-4 shadow">
+            <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:900;line-height:1.2;margin-bottom:1rem;">{{ gig.title }}</h1>
 
-    <h2>{{ gig.title }}</h2>
+            <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;color:#fff;">{{ gig.seller.username|first|upper }}</span>
+                    <span style="font-weight:600;">{{ gig.seller.username }}</span>
+                    <span class="status-badge" style="background:rgba(233,69,96,0.12);color:var(--accent);">Verified Seller</span>
+                </div>
+                <span style="color:var(--text-muted);font-size:0.84rem;">
+                    <i class="bi bi-calendar me-1"></i>Posted {{ gig.created_at|date:"M d, Y" }}
+                </span>
+            </div>
 
-    {% if gig.image %}
-      <img src="{{ gig.image.url }}" width="300" class="mb-3">
-    {% endif %}
+            {% if gig.image %}
+            <img src="{{ gig.image.url }}" alt="{{ gig.title }}" class="gig-hero-img mb-4">
+            {% else %}
+            <div style="height:280px;background:linear-gradient(135deg,var(--surface),var(--card-bg));border-radius:var(--radius);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;border:1px solid var(--border);">
+                <i class="bi bi-image" style="font-size:3rem;color:var(--border);"></i>
+            </div>
+            {% endif %}
 
-    <p>{{ gig.description }}</p>
+            <!-- Description -->
+            <div class="fm-card mb-4">
+                <h5 style="font-weight:700;margin-bottom:1rem;">About This Gig</h5>
+                <div style="color:var(--text-muted);line-height:1.8;white-space:pre-line;">{{ gig.description }}</div>
+            </div>
 
-    <h4 class="text-success">₹ {{ gig.price }}</h4>
+            <!-- Reviews -->
+            {% if gig.orders.all %}
+            <div class="fm-card">
+                <h5 style="font-weight:700;margin-bottom:1.2rem;">Client Reviews</h5>
+                {% for order in gig.orders.all %}
+                    {% if order.review %}
+                    <div style="padding-bottom:1.2rem;margin-bottom:1.2rem;border-bottom:1px solid var(--border);">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span style="width:32px;height:32px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;">{{ order.review.buyer.username|first|upper }}</span>
+                            <strong style="font-size:0.9rem;">{{ order.review.buyer.username }}</strong>
+                            <span class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= order.review.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+                        </div>
+                        <p style="color:var(--text-muted);font-size:0.88rem;margin:0;">{{ order.review.comment }}</p>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
 
-    {% if user.is_authenticated and user.role == 'buyer' %}
-      <a href="{% url 'create_order' gig.slug %}" class="btn btn-primary">
-          Buy Now
-      </a>
-      <hr>
-      <h5>Seller Information</h5>
-      <p><strong>Skills:</strong> {{ gig.seller.seller_profile.skills }}</p>
-      <p><strong>Experience:</strong> {{ gig.seller.seller_profile.experience }} years</p>
-      <p><strong>Rating:</strong> ⭐ {{ gig.seller.seller_profile.rating }}</p>
+        <!-- RIGHT: Order Card -->
+        <div class="col-lg-4">
+            <div class="seller-card">
+                <div class="order-price mb-1">₹{{ gig.price }}</div>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;">One-time payment, held in escrow</p>
 
-    {% endif %}
-    
-  </div>
+                <ul style="list-style:none;padding:0;margin-bottom:1.5rem;">
+                    <li style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;">
+                        <i class="bi bi-shield-check" style="color:var(--accent);"></i>
+                        Secure escrow payment
+                    </li>
+                    <li style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;">
+                        <i class="bi bi-arrow-repeat" style="color:var(--accent);"></i>
+                        Up to 3 free revisions
+                    </li>
+                    <li style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;border-bottom:1px solid var(--border);font-size:0.88rem;">
+                        <i class="bi bi-chat-dots" style="color:var(--accent);"></i>
+                        Direct seller messaging
+                    </li>
+                    <li style="display:flex;align-items:center;gap:0.6rem;padding:0.45rem 0;font-size:0.88rem;">
+                        <i class="bi bi-patch-check" style="color:var(--accent);"></i>
+                        Verified seller skills
+                    </li>
+                </ul>
 
+                {% if user.is_authenticated %}
+                    {% if user.role == 'buyer' %}
+                    <a href="{% url 'create_order' gig.slug %}" class="btn btn-accent w-100 mb-2" style="font-size:1rem;padding:0.75rem;">
+                        <i class="bi bi-cart-plus me-2"></i>Order Now
+                    </a>
+                    {% elif user == gig.seller %}
+                    <div class="alert alert-warning" style="font-size:0.85rem;">This is your own gig.</div>
+                    {% endif %}
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-accent w-100 mb-2" style="font-size:1rem;padding:0.75rem;">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Login to Order
+                </a>
+                {% endif %}
+
+                <!-- Seller Info -->
+                <div style="border-top:1px solid var(--border);padding-top:1.2rem;margin-top:1.2rem;">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span style="width:40px;height:40px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;">{{ gig.seller.username|first|upper }}</span>
+                        <div>
+                            <div style="font-weight:600;font-size:0.92rem;">{{ gig.seller.username }}</div>
+                            <div style="color:var(--text-muted);font-size:0.78rem;">Verified Seller</div>
+                        </div>
+                    </div>
+                    {% if gig.seller.bio %}
+                    <p style="color:var(--text-muted);font-size:0.82rem;line-height:1.5;">{{ gig.seller.bio|truncatechars:120 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
-
 {% endblock %}

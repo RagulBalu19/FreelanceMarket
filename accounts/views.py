@@ -4,18 +4,21 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse_lazy
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from datetime import timedelta
 import json
+from .models import SellerProfile
+from django.db.models.functions import TruncMonth
 
 from .forms import RegisterForm
-from .models import User, SellerProfile, Notification
+from .models import User, SellerProfile, Notification, CodingProblem, TestCase, FreelancerSkill, Submission, Skill
 from gigs.models import Gig
-from orders.models import Order
+from orders.models import Order, Review
 from orders.views import check_overdue_orders
-
+import sys, io, random
+from decimal import Decimal
 
 # ---------------- REGISTER ----------------
 def register_view(request):
@@ -48,14 +51,30 @@ def logout_view(request):
 
 # ---------------- PUBLIC LEADERBOARD ----------------
 def public_leaderboard(request):
-    top_sellers = SellerProfile.objects.select_related('user') \
-        .order_by('-total_earnings')
+
+    top_sellers = SellerProfile.objects.filter(
+        user__role="seller"
+    ).select_related("user").annotate(
+
+        total_earnings_calc=Sum(
+            "user__gigs__orders__amount",
+            filter=Q(user__gigs__orders__status=Order.Status.COMPLETED)
+        ),
+
+        completed_orders_count=Count(
+            "user__gigs__orders",
+            filter=Q(user__gigs__orders__status=Order.Status.COMPLETED)
+        )
+
+    ).order_by(
+        "-total_earnings_calc",
+        "-rating",
+        "-completed_orders_count"
+    )
 
     return render(request, "accounts/leaderboard.html", {
         "top_sellers": top_sellers
     })
-
-
 # ---------------- CREATE NOTIFICATION ----------------
 def create_notification(user, message, order=None):
     Notification.objects.create(
@@ -68,53 +87,229 @@ def create_notification(user, message, order=None):
 # ---------------- DASHBOARD (ROLE BASED REDIRECT) ----------------
 @login_required
 def dashboard(request):
+
+    user = request.user
+
+    # Check overdue orders
     check_overdue_orders()
 
-    if request.user.role == "buyer":
-        return redirect('my_orders')
+    # ================= SELLER DASHBOARD =================
+    if user.role == "seller":
 
-    elif request.user.role == "seller":
-        return redirect('seller_orders')
+        seller_orders = Order.objects.filter(
+            gig__seller=user
+        )
 
-    return redirect('home')
+        total_orders = seller_orders.count()
 
+        completed_orders = seller_orders.filter(
+            status=Order.Status.COMPLETED
+        ).count()
+
+        active_orders = seller_orders.exclude(
+            status=Order.Status.COMPLETED
+        ).count()
+
+        total_earnings = seller_orders.filter(
+            status=Order.Status.COMPLETED
+        ).aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+
+        # Chart data
+        earnings_data = seller_orders.filter(
+            status=Order.Status.COMPLETED
+        ).annotate(
+            month=TruncMonth("completed_at")
+        ).values("month").annotate(
+            total=Sum("amount")
+        ).order_by("month")
+
+
+        months = []
+        earnings = []
+
+        for item in earnings_data:
+            if item["month"]:
+                months.append(item["month"].strftime("%b %Y"))
+                earnings.append(float(item["total"]))
+
+
+        context = {
+
+            "orders": seller_orders,
+
+            "total_orders": total_orders,
+            "completed_orders": completed_orders,
+            "active_orders": active_orders,
+            "total_earnings": total_earnings,
+
+            "months": json.dumps(months),
+            "earnings": json.dumps(earnings),
+
+        }
+
+        return render(
+            request,
+            "accounts/dashboard.html",
+            context
+        )
+
+
+    # ================= BUYER DASHBOARD =================
+    else:
+
+        buyer_orders = Order.objects.filter(
+            buyer=user
+        )
+
+        total_orders = buyer_orders.count()
+
+        completed_orders = buyer_orders.filter(
+            status=Order.Status.COMPLETED
+        ).count()
+
+        active_orders = buyer_orders.exclude(
+            status=Order.Status.COMPLETED
+        ).count()
+
+
+        context = {
+
+            "orders": buyer_orders,
+
+            "total_orders": total_orders,
+            "completed_orders": completed_orders,
+            "active_orders": active_orders,
+
+        }
+
+        return render(
+            request,
+            "accounts/dashboard.html",
+            context
+        )
 
 # ---------------- PROFILE ----------------
 @login_required
 def profile_view(request):
-
     user = request.user
+    
+    if user.role == "buyer":
 
-    if request.method == "POST":
-        user.bio = request.POST.get("bio")
+        total_orders = Order.objects.filter(buyer=user).count()
 
-        if request.FILES.get("profile_pic"):
-            user.profile_pic = request.FILES.get("profile_pic")
+        completed_orders = Order.objects.filter(
+            buyer=user,
+            status=Order.Status.COMPLETED
+        ).count()
 
-        user.save()
-        return redirect('profile')
+        active_orders = Order.objects.filter(
+            buyer=user,
+            status__in=[
+                Order.Status.PAID,
+                Order.Status.IN_PROGRESS,
+                Order.Status.SUBMITTED,
+                Order.Status.REVISION
+            ]
+        ).count()
 
-    return render(request, 'accounts/profile.html')
+        total_spent = Order.objects.filter(
+            buyer=user,
+            status=Order.Status.COMPLETED
+        ).aggregate(total=Sum("amount"))["total"] or 0
+
+        reviews_given = Review.objects.filter(
+            buyer=user
+        ).count()
+
+        context = {
+            "total_orders": total_orders,
+            "completed_orders": completed_orders,
+            "active_orders": active_orders,
+            "total_spent": total_spent,
+            "reviews_given": reviews_given,
+        }
+
+        return render(request, "accounts/profile.html", context)
+    # Safe SellerProfile access
+    seller_profile = getattr(user, "profile", None)
+
+    # Completed Orders
+    # completed_orders = user.orders.filter(status="COMPLETED").count()
+    
+    completed_orders = Order.objects.filter(gig__seller=user,status=Order.Status.COMPLETED).count()
+    
+
+    total_earnings = Order.objects.filter(
+        gig__seller=request.user,
+        status=Order.Status.COMPLETED
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    # Profile Completion Logic
+    fields_filled = 0
+    total_fields = 4
+
+    if user.profile_pic:
+        fields_filled += 1
+
+    if user.bio:
+        fields_filled += 1
+
+    # if seller_profile and seller_profile.skills:
+    #     skills_list = [skill.strip() for skill in seller_profile.skills.split(",")]
 
 
+    if hasattr(user,"location") and user.location:
+        fields_filled += 1
+
+    completion_percentage = int((fields_filled / total_fields) * 100)
+    
+    verified_skills = FreelancerSkill.objects.filter(user=user,is_verified=True).values_list("skill", flat=True)
+    # Level Logic
+    if total_earnings > 5000:
+        level = "Gold"
+    elif total_earnings > 1000:
+        level = "Silver"
+    else:
+        level = "Bronze"
+    # Get skills properly (ManyToMany)
+    if seller_profile:
+        skills_list = seller_profile.skills.all()
+    else:
+        skills_list = []
+    context = {
+        "seller": seller_profile,
+        "completed_orders": completed_orders,
+        "total_earnings": total_earnings,
+        "completion_percentage": completion_percentage,
+        "level": level,
+        "skills_list":skills_list,
+        "verified_skills": verified_skills
+    }
+
+    return render(request, "accounts/profile.html", context)
 # ---------------- EDIT SELLER PROFILE ----------------
 @login_required
 def edit_seller_profile(request):
 
     if request.user.role != "seller":
         return redirect('home')
-
+    
     profile = request.user.seller_profile
-
+    all_skills = Skill.objects.all()
+    
     if request.method == "POST":
-        profile.skills = request.POST.get("skills")
+        profile.skills.set(request.POST.getlist("skills"))
+        experience = request.POST.get("experience")
         profile.experience = request.POST.get("experience")
         profile.portfolio_link = request.POST.get("portfolio_link")
         profile.save()
-        return redirect('dashboard')
+        return redirect('profile')
 
     return render(request, "accounts/edit_seller_profile.html", {
-        "profile": profile
+        "profile": profile,"all_skills": all_skills
     })
 
 
@@ -134,9 +329,9 @@ def admin_dashboard(request):
 
     total_revenue = Order.objects.filter(
         status=Order.Status.COMPLETED
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    ).aggregate(total=Sum('amount'))['total'] or Decimal("0")
 
-    platform_commission = total_revenue * 0.10
+    platform_commission = total_revenue * Decimal(0.10)
 
     # ---------------- Monthly Revenue ----------------
     monthly_data = (
@@ -183,6 +378,7 @@ def admin_dashboard(request):
 
     # ---------------- Top Sellers ----------------
     top_sellers = SellerProfile.objects.select_related('user') \
+        .filter(user__role="seller")\
         .order_by('-total_earnings')[:5]
 
     context = {
@@ -203,3 +399,204 @@ def admin_dashboard(request):
     }
 
     return render(request, "accounts/admin_dashboard.html", context)
+
+# =========================
+# FRONTEND VALIDATORS
+# =========================
+
+def validate_html(code):
+    required_tags = ["<table>", "<tr>", "<td>", "</table>", "</tr>", "</td>"]
+    matched = sum(1 for tag in required_tags if tag in code)
+    return (matched / len(required_tags)) * 100
+
+
+def validate_css(code):
+    required_patterns = ["{", "}", "color", "font", "margin"]
+    matched = sum(1 for item in required_patterns if item in code)
+    return (matched / len(required_patterns)) * 100
+
+
+def validate_js(code):
+    required_patterns = ["function", "console.log", "var", "let", "const"]
+    matched = sum(1 for item in required_patterns if item in code)
+    return (matched / len(required_patterns)) * 100
+
+# ---------------verification badge---------------
+def submit_code(request, problem_id):
+    problem = get_object_or_404(CodingProblem, id=problem_id)
+
+    
+    skill_name = problem.skill.name.lower()
+
+    if skill_name in ["html", "css", "js"]:
+
+        if request.method == "POST":
+            code = request.POST.get("code", "").lower()
+
+            if skill_name == "html":
+                percentage = validate_html(code)
+
+            elif skill_name == "css":
+                percentage = validate_css(code)
+
+            elif skill_name == "js":
+                percentage = validate_js(code)
+
+            passed = percentage >= problem.min_score
+
+            Submission.objects.create(
+                user=request.user,
+                problem=problem,
+                code=code,
+                score=percentage,
+                passed=passed
+            )
+
+            # Auto verify
+            if passed:
+                fs, created = FreelancerSkill.objects.get_or_create(
+                    user=request.user,
+                    skill=problem.skill
+                )
+                fs.is_verified = True
+                fs.save()
+
+            return render(request, "result.html", {
+                "score": percentage,
+                "passed": passed,
+                "results": []
+            })
+
+        return render(request, "problem_detail.html", {"problem": problem})
+    
+    # 🔒 Attempt Limit Check
+    attempts = Submission.objects.filter(
+        user=request.user,
+        problem=problem
+    ).count()
+
+    if attempts >= problem.max_attempts:
+        return render(request, "accounts/attempt_limit.html")
+
+    if request.method == "POST":
+        code = request.POST.get("code")
+        test_cases = TestCase.objects.filter(problem=problem)
+
+        passed_count = 0
+        total = test_cases.count()
+
+        results = []
+
+        for test in test_cases:
+            old_stdout = sys.stdout
+            old_stdin = sys.stdin
+            
+            sys.stdout = io.StringIO()
+            sys.stdin = io.StringIO(test.input_data)
+
+            try:
+                exec(code)
+                output = sys.stdout.getvalue().strip()
+            except Exception:
+                output = "Error"
+
+            sys.stdout = old_stdout
+            sys.stdin = old_stdin
+
+            is_passed = output == test.expected_output.strip()
+
+            if is_passed:
+                passed_count += 1
+
+            # Only show non-hidden test cases
+            if not test.is_hidden:
+                results.append({
+                    "input": test.input_data,
+                    "expected": test.expected_output,
+                    "output": output,
+                    "passed": is_passed
+                })
+
+        percentage = (passed_count / total) * 100
+        passed = percentage >= problem.min_score
+
+        submission = Submission.objects.create(
+            user=request.user,
+            problem=problem,
+            code=code,
+            score=percentage,
+            passed=passed
+        )
+
+        # 🎯 AUTO VERIFY LOGIC
+        if passed:
+            fs, created = FreelancerSkill.objects.get_or_create(
+                user=request.user,
+                skill=problem.skill
+            )
+            fs.is_verified = True
+            fs.save()
+
+        return render(request, "result.html", {
+            "score": percentage,
+            "passed": passed,
+            "results": results
+        })
+
+    return render(request, "problem_detail.html", {"problem": problem})
+
+@login_required
+def my_skill_tests(request):
+    seller_profile = getattr(request.user, "seller_profile", None)
+
+    if not seller_profile:
+        return redirect("dashboard")
+
+    skills = seller_profile.skills.all()
+
+    # 🔹 Get already verified skills
+    verified_skills = FreelancerSkill.objects.filter(
+        user=request.user,
+        is_verified=True
+    ).values_list("skill", flat=True)
+
+    # 🔹 Show only problems for unverified skills
+    problems = CodingProblem.objects.filter(
+        skill__in=skills
+    ).exclude(
+        skill__in=verified_skills
+    )
+
+    return render(request, "accounts/my_skill_tests.html", {
+        "problems": problems
+    })
+    
+@login_required
+def start_test(request, skill_id):
+
+    problems = CodingProblem.objects.filter(skill_id=skill_id)
+
+    problem = random.choice(problems)
+
+    return redirect("coding_test", problem.id)
+
+def generate_problem_view(request):
+
+    data = generate_problem()
+
+    problem = CodingProblem.objects.create(
+        skill_id=1,  # example Python skill
+        title=data["title"],
+        description=data["description"],
+        sample_input=data["sample_input"],
+        sample_output=data["sample_output"]
+    )
+
+    for tc in data["testcases"]:
+        TestCase.objects.create(
+            problem=problem,
+            input_data=tc["input"],
+            expected_output=tc["output"]
+        )
+
+    return redirect("admin_dashboard")

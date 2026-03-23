@@ -1,28 +1,68 @@
 {% extends 'base.html' %}
+{% block title %}Place Order – FreelanceMarket{% endblock %}
+
 {% block content %}
+<div class="container py-5" style="max-width:720px;">
+    <div class="mb-4">
+        <div class="section-label">Checkout</div>
+        <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:900;">Confirm Your Order</h1>
+    </div>
 
-<div class="container mt-5">
+    <!-- Gig Summary -->
+    <div class="fm-card mb-4">
+        <div class="d-flex gap-3 align-items-center">
+            {% if gig.image %}
+            <img src="{{ gig.image.url }}" style="width:80px;height:60px;object-fit:cover;border-radius:10px;">
+            {% else %}
+            <div style="width:80px;height:60px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-image" style="color:var(--border);"></i>
+            </div>
+            {% endif %}
+            <div class="flex-grow-1">
+                <h6 style="font-weight:700;margin:0;">{{ gig.title }}</h6>
+                <div style="color:var(--text-muted);font-size:0.85rem;">by {{ gig.seller.username }}</div>
+            </div>
+            <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--accent2);">
+                ₹{{ gig.price }}
+            </div>
+        </div>
+    </div>
 
-  <div class="card p-4 shadow col-md-6 mx-auto">
+    <!-- Order Form -->
+    <form method="post" novalidate>
+        {% csrf_token %}
 
-    <h4>Order: {{ gig.title }}</h4>
-    <p class="text-success">Price: ₹ {{ gig.price }}</p>
+        <div class="fm-card">
+            <!-- Requirements -->
+            <div class="mb-4">
+                <label class="form-label">Project Requirements *</label>
+                <textarea name="requirements" class="fm-form-control w-100" rows="5"
+                          placeholder="Describe exactly what you need. Include any specific details, links, or attachments the seller should know about." required></textarea>
+                <div style="color:var(--text-muted);font-size:0.78rem;margin-top:0.3rem;">
+                    The more detail you provide, the better the result.
+                </div>
+            </div>
 
-    <form method="POST">
-      {% csrf_token %}
+            <!-- Deadline -->
+            <div class="mb-4">
+                <label class="form-label">Preferred Deadline</label>
+                <input type="date" name="deadline" class="fm-form-control" style="max-width:280px;"
+                       min="{{ today_date }}">
+            </div>
 
-      <label>Project Requirements</label>
-      <textarea name="requirements" class="form-control mb-3" rows="4" required></textarea>
+            <!-- Payment Notice -->
+            <div class="alert alert-info mb-4">
+                <i class="bi bi-shield-lock me-2"></i>
+                Your payment of <strong>₹{{ gig.price }}</strong> will be held in secure escrow and only released to the seller when you approve the delivery.
+            </div>
 
-      <label>Deadline</label>
-      <input type="date" name="deadline" class="form-control mb-3" required>
-
-      <button class="btn btn-primary w-100">Proceed to Payment</button>
-
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-accent" style="padding:0.7rem 2rem;font-size:1rem;">
+                    <i class="bi bi-lock me-1"></i> Place Order & Pay
+                </button>
+                <a href="{% url 'gig_detail' gig.slug %}" class="btn btn-outline-accent" style="padding:0.7rem 1.5rem;">Cancel</a>
+            </div>
+        </div>
     </form>
-
-  </div>
-
 </div>
-
 {% endblock %}

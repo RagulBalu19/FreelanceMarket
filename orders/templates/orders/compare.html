@@ -1,39 +1,46 @@
 {% extends 'base.html' %}
+{% block title %}Delivery History – FreelanceMarket{% endblock %}
+
 {% block content %}
-
-<div class="container mt-4">
-
-<h3>Submission Comparison</h3>
-
-<h5>Gig: {{ order.gig.title }}</h5>
-<hr>
-
-{% for delivery in deliveries %}
-<div class="card mb-3 p-3">
-
-    <h5>
-        Version {{ delivery.version }}
-        {% if forloop.first %}
-            <span class="badge bg-success">Latest</span>
-        {% endif %}
-    </h5>
-
-    <p><strong>Message:</strong> {{ delivery.message }}</p>
-
-    <p>
-        <strong>Submitted:</strong> {{ delivery.submitted_at }}
-    </p>
-
-    <a href="{{ delivery.file.url }}" 
-       class="btn btn-primary btn-sm">
-        Download File
-    </a>
-
-</div>
-{% empty %}
-<p>No submissions yet.</p>
-{% endfor %}
-
+<div class="page-header">
+    <div class="container">
+        <div class="section-label">Order</div>
+        <h1>Delivery History</h1>
+        <p style="color:var(--text-muted);">{{ order.gig.title }}</p>
+    </div>
 </div>
 
+<div class="container pb-5">
+    {% if deliveries %}
+    <div class="row g-4">
+        {% for delivery in deliveries %}
+        <div class="col-md-6 col-lg-4">
+            <div class="fm-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <span style="font-family:var(--font-display);font-size:1.3rem;font-weight:700;">Version {{ delivery.version }}</span>
+                    {% if forloop.first %}
+                    <span class="status-badge" style="background:rgba(25,135,84,0.15);color:#75b798;">Latest</span>
+                    {% endif %}
+                </div>
+                <div style="font-size:0.84rem;color:var(--text-muted);margin-bottom:0.8rem;">
+                    <i class="bi bi-clock me-1"></i>{{ delivery.submitted_at|date:"M d, Y – g:i A" }}
+                </div>
+                {% if delivery.message %}
+                <p style="color:var(--text-muted);font-size:0.85rem;line-height:1.5;margin-bottom:1rem;">{{ delivery.message|truncatechars:120 }}</p>
+                {% endif %}
+                <a href="{{ delivery.file.url }}" class="btn btn-accent w-100" download>
+                    <i class="bi bi-download me-1"></i>Download v{{ delivery.version }}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-inbox" style="font-size:3rem;display:block;margin-bottom:1rem;opacity:0.4;"></i>
+        <h5>No deliveries yet</h5>
+        <p>The seller hasn't submitted a delivery for this order.</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

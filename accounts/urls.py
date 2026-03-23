@@ -10,7 +10,7 @@
 # ]
 
 from django.urls import path
-from .views import register_view, logout_view, profile_view, CustomLoginView, dashboard, edit_seller_profile, admin_dashboard, public_leaderboard
+from .views import register_view, logout_view, profile_view, CustomLoginView, dashboard, edit_seller_profile, admin_dashboard, public_leaderboard, submit_code, my_skill_tests
 
 urlpatterns = [
     path('register/', register_view, name='register'),
@@ -21,6 +21,8 @@ urlpatterns = [
     path('seller-profile/edit/', edit_seller_profile, name='edit_seller_profile'),
     path('admin-dashboard/', admin_dashboard, name='admin_dashboard'),
     path('leaderboard/', public_leaderboard, name='leaderboard'),
+    path("coding-test/<int:problem_id>/", submit_code, name="coding_test"),
+    path("my-tests/", my_skill_tests, name="my_tests"),
 
 
 ]

@@ -1,18 +1,111 @@
 {% extends 'base.html' %}
+{% block title %}Post a Gig – FreelanceMarket{% endblock %}
+
 {% block content %}
+<div class="container py-5" style="max-width:680px;">
+    <div class="mb-4">
+        <div class="section-label">Seller</div>
+        <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:900;">Post a New Gig</h1>
+        <p style="color:var(--text-muted);">Fill in your gig details. All fields except image are required.</p>
+    </div>
 
-<div class="container mt-5 d-flex justify-content-center">
+    {% if form.errors %}
+    <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Please fix the errors below.
+    </div>
+    {% endif %}
 
-  <div class="card p-4 shadow col-md-6">
-    <h3 class="mb-3">Create Gig</h3>
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
 
-    <form method="POST" enctype="multipart/form-data">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button class="btn btn-success w-100">Post Gig</button>
+        <div class="fm-card">
+            <!-- Title -->
+            <div class="mb-4">
+                <label class="form-label">Gig Title *</label>
+                <input type="text" name="title" class="fm-form-control w-100"
+                       value="{{ form.title.value|default:'' }}"
+                       placeholder="e.g. I will build a professional Django REST API" required maxlength="200">
+                {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+                <div style="color:var(--text-muted);font-size:0.78rem;margin-top:0.3rem;">Be specific and highlight your expertise (max 200 chars)</div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+                <label class="form-label">Description *</label>
+                <textarea name="description" class="fm-form-control w-100" rows="6"
+                          placeholder="Describe your service in detail. What will you deliver? What's included? What do you need from the buyer?">{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Price -->
+            <div class="mb-4">
+                <label class="form-label">Price (USD) *</label>
+                <div class="position-relative" style="max-width:220px;">
+                    <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--accent2);font-weight:700;font-size:1.1rem;">₹</span>
+                    <input type="number" name="price" class="fm-form-control w-100" style="padding-left:2rem;"
+                           value="{{ form.price.value|default:'' }}"
+                           placeholder="50.00" min="1" step="0.01" required>
+                </div>
+                {% if form.price.errors %}<div class="text-danger small mt-1">{{ form.price.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Image -->
+            <div class="mb-4">
+                <label class="form-label">Gig Image <span style="color:var(--text-muted)">(optional)</span></label>
+                <div id="dropArea" style="border:2px dashed var(--border);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;"
+                     onclick="document.getElementById('imgInput').click()">
+                    <i class="bi bi-image" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:0.5rem;"></i>
+                    <p style="color:var(--text-muted);font-size:0.88rem;margin:0;">Click to upload image (JPG, PNG, max 5MB)</p>
+                    <div id="imgPreviewLabel" style="color:var(--accent);font-size:0.85rem;margin-top:0.5rem;"></div>
+                </div>
+                <input type="file" name="image" id="imgInput" accept="image/*" style="display:none;" onchange="previewImg(this)">
+                {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors.0 }}</div>{% endif %}
+                <div id="imgPreview" style="margin-top:1rem;display:none;">
+                    <img id="imgPreviewEl" src="" style="max-height:180px;border-radius:10px;border:1px solid var(--border);">
+                </div>
+            </div>
+
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-accent" style="padding:0.7rem 2rem;font-size:1rem;">
+                    <i class="bi bi-check2 me-1"></i> Publish Gig
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-accent" style="padding:0.7rem 1.5rem;">Cancel</a>
+            </div>
+        </div>
     </form>
-  </div>
-
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+function previewImg(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('imgPreviewLabel').textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('imgPreview');
+            document.getElementById('imgPreviewEl').src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+// Drag-and-drop highlight
+const dropArea = document.getElementById('dropArea');
+dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.style.borderColor = 'var(--accent)'; });
+dropArea.addEventListener('dragleave', () => { dropArea.style.borderColor = 'var(--border)'; });
+dropArea.addEventListener('drop', e => {
+    e.preventDefault();
+    dropArea.style.borderColor = 'var(--border)';
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('imgInput').files = dt.files;
+        previewImg(document.getElementById('imgInput'));
+    }
+});
+</script>
 {% endblock %}

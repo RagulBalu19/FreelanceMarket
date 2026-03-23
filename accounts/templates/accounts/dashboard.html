@@ -1,9 +1,418 @@
-<h2>Dashboard</h2>
+{% extends 'base.html' %}
+{% block title %}Dashboard – FreelanceMarket{% endblock %}
 
-<p>Welcome {{ request.user.username }} 🔥</p>
+{% block extra_css %}
+<style>
+.dash-header {
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(15,52,96,0.8) 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 0;
+    margin-bottom: 2.5rem;
+}
+.dash-avatar {
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    object-fit: cover;
+    border: 2px solid var(--accent);
+}
+.dash-avatar-placeholder {
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.4rem; color: #fff;
+    border: 2px solid rgba(233,69,96,0.4);
+}
+.chart-container { position: relative; height: 220px; }
 
-<a href="/gigs/">Browse Gigs</a>
-<a href="{% url 'profile' %}">Profile</a>
-<a href="{% url 'logout' %}">Logout</a>
+/* Quick action buttons */
+.quick-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-main);
+    text-decoration: none;
+    transition: all 0.2s;
+    display: block;
+}
+.quick-btn:hover {
+    background: rgba(233,69,96,0.08);
+    border-color: var(--accent);
+    color: var(--text-main);
+    transform: translateY(-2px);
+}
+.quick-btn i { font-size: 1.6rem; display: block; margin-bottom: 0.4rem; color: var(--accent); }
+.quick-btn span { font-size: 0.82rem; font-weight: 500; }
+</style>
+{% endblock %}
 
-<p>Completed Orders: {{ completed_orders }}</p>
+{% block content %}
+
+<!-- DASH HEADER -->
+<div class="dash-header">
+    <div class="container">
+        <div class="d-flex align-items-center gap-3">
+            {% if user.profile_pic %}
+            <img src="{{ user.profile_pic.url }}" class="dash-avatar" alt="{{ user.username }}">
+            {% else %}
+            <div class="dash-avatar-placeholder">{{ user.username|first|upper }}</div>
+            {% endif %}
+            <div>
+                <div class="section-label">{{ user.role|title }} Dashboard</div>
+                <h2 style="font-family:var(--font-display);font-size:1.7rem;font-weight:900;margin:0;">
+                    Welcome back, {{ user.username }}
+                </h2>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin:0;">
+                    {% if user.role == 'seller' %}Manage your gigs and orders{% else %}Track your projects{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+
+    {% if user.role == 'seller' %}
+    <!-- ═══════════ SELLER DASHBOARD ═══════════ -->
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value" style="color:var(--accent2);">₹{{ total_earnings|floatformat:0 }}</div>
+                        <div class="stat-label">Total Earnings</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(245,166,35,0.12);color:var(--accent2);">
+                        <i class="bi bi-currency-dollar"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">{{ total_orders }}</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(13,202,240,0.12);color:#0dcaf0;">
+                        <i class="bi bi-bag"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value" style="color:#75b798;">{{ completed_orders }}</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(25,135,84,0.12);color:#75b798;">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value" style="color:#6ea8fe;">{{ active_orders }}</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(13,110,253,0.12);color:#6ea8fe;">
+                        <i class="bi bi-lightning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Earnings Chart -->
+        <div class="col-lg-7">
+            <div class="fm-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 style="font-weight:700;margin:0;">Monthly Earnings</h6>
+                </div>
+                <div class="chart-container">
+                    <canvas id="earningsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-5">
+            <div class="fm-card h-100">
+                <h6 style="font-weight:700;margin-bottom:1.2rem;">Quick Actions</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{% url 'create_gig' %}" class="quick-btn">
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Post Gig</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'seller_orders' %}" class="quick-btn">
+                            <i class="bi bi-briefcase"></i>
+                            <span>My Orders</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'edit_seller_profile' %}" class="quick-btn">
+                            <i class="bi bi-pencil-square"></i>
+                            <span>Edit Profile</span>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{% url 'my_tests' %}" class="quick-btn">
+                            <i class="bi bi-code-slash"></i>
+                            <span>Skill Tests</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Gigs -->
+        <div class="col-12">
+            <div class="fm-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 style="font-weight:700;margin:0;">My Gigs</h6>
+                    <a href="{% url 'create_gig' %}" class="btn btn-accent btn-sm">+ New Gig</a>
+                </div>
+                {% if my_gigs %}
+                <div class="table-responsive">
+                    <table class="fm-table">
+                        <thead>
+                            <tr>
+                                <th>Gig</th>
+                                <th>Price</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for gig in my_gigs %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;font-size:0.9rem;">{{ gig.title|truncatechars:40 }}</div>
+                                </td>
+                                <td style="color:var(--accent2);font-weight:600;">₹{{ gig.price }}</td>
+                                <td>
+                                    {% if gig.is_active %}
+                                    <span class="status-badge" style="background:rgba(25,135,84,0.15);color:#75b798;">Active</span>
+                                    {% else %}
+                                    <span class="status-badge" style="background:rgba(108,117,125,0.15);color:#adb5bd;">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td style="color:var(--text-muted);font-size:0.85rem;">{{ gig.created_at|date:"M d, Y" }}</td>
+                                <td><a href="{% url 'gig_detail' gig.slug %}" class="btn btn-sm btn-outline-accent">View</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4" style="color:var(--text-muted);">
+                    <i class="bi bi-grid" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>
+                    You haven't posted any gigs yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="col-12">
+            <div class="fm-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 style="font-weight:700;margin:0;">Recent Orders</h6>
+                    <a href="{% url 'seller_orders' %}" style="color:var(--accent);font-size:0.85rem;text-decoration:none;">View All →</a>
+                </div>
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="fm-table">
+                        <thead>
+                            <tr><th>Order</th><th>Buyer</th><th>Gig</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td style="color:var(--text-muted);font-size:0.8rem;font-family:monospace;">{{ order.order_id|stringformat:"s"|slice:":8" }}…</td>
+                                <td style="font-weight:500;">{{ order.buyer.username }}</td>
+                                <td style="font-size:0.88rem;">{{ order.gig.title|truncatechars:30 }}</td>
+                                <td style="color:var(--accent2);font-weight:600;">₹{{ order.amount }}</td>
+                                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                                <td>
+                                    <a href="{% url 'order_chat' order.order_id %}" class="btn btn-sm btn-outline-accent">Chat</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color:var(--text-muted);text-align:center;padding:1.5rem 0;">No orders yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ═══════════ BUYER DASHBOARD ═══════════ -->
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value">{{ total_orders }}</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(13,202,240,0.12);color:#0dcaf0;"><i class="bi bi-bag"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value" style="color:#75b798;">{{ completed_orders }}</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(25,135,84,0.12);color:#75b798;"><i class="bi bi-check2-circle"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value" style="color:#6ea8fe;">{{ active_orders }}</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(13,110,253,0.12);color:#6ea8fe;"><i class="bi bi-lightning"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-value" style="color:var(--accent2);">₹{{ total_spent|floatformat:0 }}</div>
+                        <div class="stat-label">Total Spent</div>
+                    </div>
+                    <div class="stat-icon" style="background:rgba(245,166,35,0.12);color:var(--accent2);"><i class="bi bi-credit-card"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="fm-card h-100">
+                <h6 style="font-weight:700;margin-bottom:1.2rem;">Quick Actions</h6>
+                <div class="d-flex flex-column gap-2">
+                    <a href="{% url 'gig_list' %}" class="quick-btn d-flex align-items-center gap-3 text-start">
+                        <i class="bi bi-search" style="font-size:1.4rem;color:var(--accent);"></i>
+                        <span>Browse Gigs</span>
+                    </a>
+                    <a href="{% url 'my_orders' %}" class="quick-btn d-flex align-items-center gap-3 text-start">
+                        <i class="bi bi-bag" style="font-size:1.4rem;color:var(--accent);"></i>
+                        <span>My Orders</span>
+                    </a>
+                    <a href="{% url 'notifications' %}" class="quick-btn d-flex align-items-center gap-3 text-start">
+                        <i class="bi bi-bell" style="font-size:1.4rem;color:var(--accent);"></i>
+                        <span>Notifications</span>
+                        {% if unread_count %}<span class="ms-auto" style="background:var(--accent);color:#fff;border-radius:20px;padding:0.15rem 0.6rem;font-size:0.75rem;font-weight:700;">{{ unread_count }}</span>{% endif %}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="fm-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 style="font-weight:700;margin:0;">My Orders</h6>
+                    <a href="{% url 'my_orders' %}" style="color:var(--accent);font-size:0.85rem;text-decoration:none;">View All →</a>
+                </div>
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="fm-table">
+                        <thead>
+                            <tr><th>Gig</th><th>Seller</th><th>Amount</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td style="font-size:0.88rem;font-weight:500;">{{ order.gig.title|truncatechars:30 }}</td>
+                                <td style="color:var(--text-muted);">{{ order.gig.seller.username }}</td>
+                                <td style="color:var(--accent2);font-weight:600;">₹{{ order.amount }}</td>
+                                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                                <td>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <a href="{% url 'order_chat' order.order_id %}" class="btn btn-sm btn-outline-accent">Chat</a>
+                                        {% if order.status == 'SUBMITTED' %}
+                                        <form method="post" action="{% url 'complete_order' order.order_id %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-gold">Complete</button></form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5" style="color:var(--text-muted);">
+                    <i class="bi bi-bag" style="font-size:2.5rem;display:block;margin-bottom:0.7rem;"></i>
+                    No orders yet. <a href="{% url 'gig_list' %}" style="color:var(--accent);">Browse gigs</a> to get started.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if user.role == 'seller' %}
+<script>
+const ctx = document.getElementById('earningsChart');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Earnings (₹)',
+                data: {{ earnings|safe }},
+                borderColor: '#e94560',
+                backgroundColor: 'rgba(233,69,96,0.1)',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                pointBackgroundColor: '#e94560',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8892a4', font: { size: 11 } } },
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8892a4', font: { size: 11 }, callback: v => '₹'+v } }
+            }
+        }
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

@@ -1,17 +1,325 @@
 {% extends 'base.html' %}
 
+{% block title %}FreelanceMarket – Find Top Freelancers{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Hero */
+    .hero {
+        padding: 6rem 0 5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse 80% 60% at 60% 0%, rgba(233,69,96,0.14) 0%, transparent 70%),
+                    radial-gradient(ellipse 50% 60% at 10% 80%, rgba(15,52,96,0.6) 0%, transparent 60%);
+        pointer-events: none;
+    }
+    .hero-eyebrow {
+        display: inline-block;
+        background: rgba(233,69,96,0.15);
+        color: var(--accent);
+        border: 1px solid rgba(233,69,96,0.3);
+        border-radius: 20px;
+        padding: 0.3rem 1rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+        font-family: var(--font-display);
+        font-size: clamp(2.5rem, 6vw, 4rem);
+        font-weight: 900;
+        line-height: 1.12;
+        color: var(--text-main);
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero-sub {
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        max-width: 500px;
+        line-height: 1.7;
+    }
+    .hero-search {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        max-width: 480px;
+    }
+    .hero-search input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-main);
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        padding: 0.4rem 0.8rem;
+        outline: none;
+    }
+    .hero-search input::placeholder { color: var(--text-muted); }
 
+    .trust-row { color: var(--text-muted); font-size: 0.85rem; margin-top: 1.5rem; }
+    .trust-row strong { color: var(--text-main); }
+
+    /* Category pills */
+    .cat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 0.45rem 1.1rem;
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.87rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    .cat-pill:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+    }
+
+    /* Section */
+    .section-title {
+        font-family: var(--font-display);
+        font-size: 1.9rem;
+        font-weight: 900;
+        margin-bottom: 0.4rem;
+    }
+
+    /* Floating cards in hero */
+    .hero-visual {
+        position: relative;
+        height: 380px;
+    }
+    .float-card {
+        position: absolute;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1rem 1.2rem;
+        animation: float 4s ease-in-out infinite;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+    .float-card:nth-child(2) { animation-delay: -2s; }
+    .float-card:nth-child(3) { animation-delay: -1s; }
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50%       { transform: translateY(-12px); }
+    }
+
+    /* Steps */
+    .step-num {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        background: rgba(233,69,96,0.15);
+        border: 1px solid rgba(233,69,96,0.3);
+        color: var(--accent);
+        font-weight: 800;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 
-<div class="text-center">
-  <h2>Welcome to Freelance Market 🚀</h2>
-  <p>Buy & Sell Micro Services Easily</p>
+<!-- HERO -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <div class="hero-eyebrow">✦ Verified Freelancer Marketplace</div>
+                <h1>Hire Expert <span>Freelancers</span><br>You Can Trust</h1>
+                <p class="hero-sub mt-3">Every seller passes skill tests before offering services. Browse verified professionals for your project.</p>
 
-  <a href="{% url 'gig_list' %}" class="btn btn-primary mt-3">
-      Browse Gigs
-  </a>
-</div>
+                <div class="hero-search mt-4">
+                    <input type="text" id="searchInput" placeholder="Search gigs, skills..." onkeydown="if(event.key==='Enter') doSearch()">
+                    <button class="btn btn-accent" onclick="doSearch()"><i class="bi bi-search me-1"></i>Search</button>
+                </div>
 
+                <div class="trust-row d-flex gap-4 flex-wrap mt-3">
+                    <div><strong>500+</strong> Gigs Listed</div>
+                    <div><strong>100%</strong> Verified Sellers</div>
+                    <div><strong>Escrow</strong> Protected</div>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-block">
+                <div class="hero-visual">
+                    <div class="float-card" style="top:30px;left:20px;width:200px;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.75rem;color:#fff;">JD</span>
+                            <div>
+                                <div style="font-size:0.82rem;font-weight:600;">John Dev</div>
+                                <div class="stars" style="font-size:0.7rem;">★★★★★</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.78rem;color:var(--text-muted);">Full Stack Developer</div>
+                        <div style="color:var(--accent2);font-weight:700;margin-top:0.4rem;">From ₹50</div>
+                    </div>
+                    <div class="float-card" style="top:140px;right:0;width:210px;">
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;">Order Completed</div>
+                        <div style="font-size:0.88rem;font-weight:600;">Logo Design Pack</div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <span class="status-badge status-COMPLETED">Completed</span>
+                            <span style="color:var(--accent2);font-weight:700;">₹120</span>
+                        </div>
+                    </div>
+                    <div class="float-card" style="bottom:0;left:50px;width:220px;">
+                        <div class="d-flex gap-2 align-items-center">
+                            <i class="bi bi-shield-check" style="color:var(--accent);font-size:1.4rem;"></i>
+                            <div>
+                                <div style="font-weight:600;font-size:0.88rem;">Skill Verified</div>
+                                <div style="color:var(--text-muted);font-size:0.75rem;">Python · React · Django</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="py-4">
+    <div class="container">
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="cat-pill" onclick="filterGigs('')"><i class="bi bi-grid-3x3-gap"></i>All</span>
+            <span class="cat-pill" onclick="filterGigs('design')"><i class="bi bi-palette"></i>Design</span>
+            <span class="cat-pill" onclick="filterGigs('web')"><i class="bi bi-code-slash"></i>Web Dev</span>
+            <span class="cat-pill" onclick="filterGigs('writing')"><i class="bi bi-pencil"></i>Writing</span>
+            <span class="cat-pill" onclick="filterGigs('marketing')"><i class="bi bi-megaphone"></i>Marketing</span>
+            <span class="cat-pill" onclick="filterGigs('video')"><i class="bi bi-camera-video"></i>Video</span>
+            <span class="cat-pill" onclick="filterGigs('data')"><i class="bi bi-bar-chart"></i>Data</span>
+        </div>
+    </div>
+</section>
+
+<!-- GIGS GRID -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex align-items-end justify-content-between mb-4">
+            <div>
+                <div class="section-label">Browse Gigs</div>
+                <h2 class="section-title">Featured Services</h2>
+            </div>
+            <a href="{% url 'gig_list' %}" class="btn-outline-accent btn d-none d-md-inline-flex align-items-center gap-2">
+                View All <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="row g-4" id="gigsGrid">
+            {% for gig in gigs %}
+            <div class="col-sm-6 col-lg-4 col-xl-3 gig-item" data-title="{{ gig.title|lower }}">
+                <a href="{% url 'gig_detail' gig.slug %}" class="text-decoration-none">
+                    <div class="gig-card">
+                        {% if gig.image %}
+                        <img src="{{ gig.image.url }}" alt="{{ gig.title }}">
+                        {% else %}
+                        <div style="height:190px;background:linear-gradient(135deg,var(--surface),var(--card-bg));display:flex;align-items:center;justify-content:center;">
+                            <i class="bi bi-image" style="font-size:2.5rem;color:var(--border);"></i>
+                        </div>
+                        {% endif %}
+                        <div class="gig-card-body">
+                            <p class="gig-seller mb-1"><i class="bi bi-person-circle me-1"></i>{{ gig.seller.username }}</p>
+                            <h6 style="font-weight:600;color:var(--text-main);font-size:0.95rem;line-height:1.4;flex:1;">{{ gig.title }}</h6>
+                            <div class="d-flex align-items-center justify-content-between mt-3">
+                                <span class="gig-price">From ₹{{ gig.price }}</span>
+                                <span style="color:var(--accent);font-size:0.78rem;font-weight:600;">View →</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-grid" style="font-size:3rem;color:var(--border);"></i>
+                <p class="mt-3" style="color:var(--text-muted);">No gigs yet. Be the first to post one!</p>
+                {% if user.is_authenticated and user.role == 'seller' %}
+                <a href="{% url 'create_gig' %}" class="btn btn-accent mt-2">Post a Gig</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-5" style="background:var(--surface);">
+    <div class="container">
+        <div class="text-center mb-5">
+            <div class="section-label">Process</div>
+            <h2 class="section-title">How It Works</h2>
+        </div>
+        <div class="row g-4">
+            {% for step in '123'|make_list %}
+            <div class="col-md-4">
+                <div class="fm-card h-100">
+                    <div class="d-flex gap-3 align-items-start">
+                        <div class="step-num">{{ forloop.counter }}</div>
+                        <div>
+                            {% if forloop.counter == 1 %}
+                            <h6 style="font-weight:700;margin-bottom:0.4rem;">Browse & Discover</h6>
+                            <p style="color:var(--text-muted);font-size:0.9rem;line-height:1.6;">Explore hundreds of verified gigs across dozens of categories. Filter by skill, price, and rating.</p>
+                            {% elif forloop.counter == 2 %}
+                            <h6 style="font-weight:700;margin-bottom:0.4rem;">Place Your Order</h6>
+                            <p style="color:var(--text-muted);font-size:0.9rem;line-height:1.6;">Payment is held securely in escrow. Your money is only released when you're 100% satisfied.</p>
+                            {% else %}
+                            <h6 style="font-weight:700;margin-bottom:0.4rem;">Get Results</h6>
+                            <p style="color:var(--text-muted);font-size:0.9rem;line-height:1.6;">Review deliveries, request revisions, or raise a dispute. Your satisfaction is guaranteed.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- CTA BANNER -->
+{% if not user.is_authenticated %}
+<section class="py-5">
+    <div class="container">
+        <div style="background:linear-gradient(135deg,var(--card-bg),rgba(233,69,96,0.12));border:1px solid var(--border);border-radius:20px;padding:3.5rem 2.5rem;text-align:center;">
+            <h2 style="font-family:var(--font-display);font-size:2.2rem;font-weight:900;">Ready to Get Started?</h2>
+            <p style="color:var(--text-muted);font-size:1.05rem;margin:1rem 0 2rem;max-width:480px;margin-left:auto;margin-right:auto;">Join thousands of buyers and verified sellers on the most trusted freelance platform.</p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="{% url 'register' %}" class="btn btn-accent">Join as Buyer</a>
+                <a href="{% url 'register' %}" class="btn btn-gold">Become a Seller</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function doSearch() {
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    filterGigs(q);
+}
+function filterGigs(keyword) {
+    document.querySelectorAll('.gig-item').forEach(el => {
+        const title = el.dataset.title || '';
+        el.style.display = (!keyword || title.includes(keyword)) ? '' : 'none';
+    });
+}
+</script>
 {% endblock %}

@@ -1,24 +1,67 @@
 {% extends 'base.html' %}
+{% block title %}Leave a Review – FreelanceMarket{% endblock %}
+
 {% block content %}
+<div class="container py-5" style="max-width:560px;">
+    <div class="mb-4">
+        <div class="section-label">Feedback</div>
+        <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:900;">Leave a Review</h1>
+        <p style="color:var(--text-muted);">Rate your experience with <strong>{{ order.gig.seller.username }}</strong></p>
+    </div>
 
-<div class="container mt-5">
-  <div class="card p-4 shadow col-md-6 mx-auto">
+    <form method="post">
+        {% csrf_token %}
+        <div class="fm-card">
+            <!-- Star Rating -->
+            <div class="mb-4">
+                <label class="form-label">Rating *</label>
+                <div class="d-flex gap-2" id="starRating">
+                    {% for i in "12345"|make_list %}
+                    <span class="star-btn" data-val="{{ forloop.counter }}"
+                          style="font-size:2.5rem;cursor:pointer;color:var(--border);transition:color 0.15s;"
+                          onmouseover="hoverStars({{ forloop.counter }})"
+                          onmouseout="resetStars()"
+                          onclick="selectStar({{ forloop.counter }})">★</span>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="rating" id="ratingInput" required>
+                <div id="ratingLabel" style="color:var(--text-muted);font-size:0.85rem;margin-top:0.5rem;"></div>
+            </div>
 
-    <h4>Leave Review for {{ order.gig.title }}</h4>
+            <!-- Comment -->
+            <div class="mb-4">
+                <label class="form-label">Comment</label>
+                <textarea name="comment" class="fm-form-control w-100" rows="4"
+                          placeholder="Share your experience. Was the seller professional? Did they deliver on time?"></textarea>
+            </div>
 
-    <form method="POST">
-      {% csrf_token %}
-
-      <label>Rating (1–5)</label>
-      <input type="number" name="rating" min="1" max="5" class="form-control mb-3" required>
-
-      <label>Comment</label>
-      <textarea name="comment" class="form-control mb-3"></textarea>
-
-      <button class="btn btn-success w-100">Submit Review</button>
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-accent" style="padding:0.7rem 2rem;" id="submitBtn" disabled>
+                    <i class="bi bi-star me-1"></i>Submit Review
+                </button>
+                <a href="{% url 'my_orders' %}" class="btn btn-outline-accent" style="padding:0.7rem 1.5rem;">Cancel</a>
+            </div>
+        </div>
     </form>
-
-  </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+const labels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+let selected = 0;
+function hoverStars(n) {
+    document.querySelectorAll('.star-btn').forEach((s, i) => {
+        s.style.color = i < n ? 'var(--accent2)' : 'var(--border)';
+    });
+}
+function resetStars() { hoverStars(selected); }
+function selectStar(n) {
+    selected = n;
+    document.getElementById('ratingInput').value = n;
+    document.getElementById('ratingLabel').textContent = labels[n];
+    document.getElementById('submitBtn').disabled = false;
+    hoverStars(n);
+}
+</script>
 {% endblock %}

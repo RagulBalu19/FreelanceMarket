@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Test Result – FreelanceMarket{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:680px;">
+
+    <!-- Score Card -->
+    <div class="fm-card text-center mb-4"
+         style="{% if passed %}border-color:rgba(25,135,84,0.3);background:linear-gradient(135deg,rgba(25,135,84,0.08),var(--card-bg));{% else %}border-color:rgba(220,53,69,0.3);background:linear-gradient(135deg,rgba(220,53,69,0.08),var(--card-bg));{% endif %}">
+        <div style="font-size:4rem;margin-bottom:0.5rem;">
+            {% if passed %}🎉{% else %}😔{% endif %}
+        </div>
+        <h2 style="font-family:var(--font-display);font-size:2.5rem;font-weight:900;color:{% if passed %}#75b798{% else %}#ea868f{% endif %};">
+            {{ score|floatformat:0 }}%
+        </h2>
+        <h4 style="font-weight:700;margin-bottom:0.5rem;">
+            {% if passed %}Skill Verified! 🏆{% else %}Not Quite There{% endif %}
+        </h4>
+        <p style="color:var(--text-muted);">
+            {% if passed %}Congratulations! You've passed this skill test. Your skill is now verified.{% else %}You didn't reach the minimum score. Review your solution and try again.{% endif %}
+        </p>
+
+        <div class="d-flex gap-3 justify-content-center mt-3">
+            {% if passed %}
+            <a href="{% url 'my_tests' %}" class="btn btn-accent">Back to Tests</a>
+            <a href="{% url 'profile' %}" class="btn btn-gold">View Profile</a>
+            {% else %}
+            <a href="javascript:history.back()" class="btn btn-accent">Try Again</a>
+            <a href="{% url 'my_tests' %}" class="btn btn-outline-accent">All Tests</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Test Results -->
+    {% if results %}
+    <div class="fm-card">
+        <h6 style="font-weight:700;margin-bottom:1rem;">Test Case Results (Visible Only)</h6>
+        {% for r in results %}
+        <div style="border:1px solid {% if r.passed %}rgba(25,135,84,0.3){% else %}rgba(220,53,69,0.3){% endif %};border-radius:10px;padding:1rem;margin-bottom:0.8rem;background:{% if r.passed %}rgba(25,135,84,0.05){% else %}rgba(220,53,69,0.05){% endif %};">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span style="font-weight:600;font-size:0.88rem;">Test Case {{ forloop.counter }}</span>
+                <span class="status-badge {% if r.passed %}status-COMPLETED{% else %}status-DISPUTED{% endif %}">
+                    {% if r.passed %}Passed{% else %}Failed{% endif %}
+                </span>
+            </div>
+            <div class="row g-2" style="font-family:monospace;font-size:0.82rem;">
+                <div class="col-4">
+                    <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:0.2rem;">INPUT</div>
+                    <div style="background:#0d1117;padding:0.4rem 0.6rem;border-radius:6px;">{{ r.input }}</div>
+                </div>
+                <div class="col-4">
+                    <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:0.2rem;">EXPECTED</div>
+                    <div style="background:#0d1117;padding:0.4rem 0.6rem;border-radius:6px;color:#75b798;">{{ r.expected }}</div>
+                </div>
+                <div class="col-4">
+                    <div style="color:var(--text-muted);font-size:0.72rem;margin-bottom:0.2rem;">YOUR OUTPUT</div>
+                    <div style="background:#0d1117;padding:0.4rem 0.6rem;border-radius:6px;color:{% if r.passed %}#75b798{% else %}#ea868f{% endif %};">{{ r.output }}</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

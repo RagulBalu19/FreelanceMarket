@@ -1,48 +1,131 @@
 {% extends 'base.html' %}
+{% block title %}Leaderboard – FreelanceMarket{% endblock %}
+
+{% block extra_css %}
+<style>
+.rank-1 { background: linear-gradient(135deg, rgba(245,166,35,0.12), rgba(245,166,35,0.04)); border-color: rgba(245,166,35,0.3); }
+.rank-2 { background: linear-gradient(135deg, rgba(200,210,220,0.1), rgba(200,210,220,0.03)); border-color: rgba(200,210,220,0.25); }
+.rank-3 { background: linear-gradient(135deg, rgba(176,141,87,0.1), rgba(176,141,87,0.03)); border-color: rgba(176,141,87,0.25); }
+
+.rank-badge {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="page-header">
+    <div class="container text-center">
+        <div class="section-label">Rankings</div>
+        <h1>Top Sellers Leaderboard</h1>
+        <p style="color:var(--text-muted);max-width:480px;margin:0.5rem auto 0;">Our highest-rated and top-earning verified freelancers</p>
+    </div>
+</div>
 
-<div class="container mt-5">
+<div class="container pb-5" style="max-width:800px;">
+    {% if top_sellers %}
 
-<h2 class="mb-4 text-center">🏆 Top Sellers Leaderboard</h2>
-
-<div class="card p-4 shadow">
-
-<table class="table table-striped">
-<thead>
-<tr>
-  <th>Rank</th>
-  <th>Seller</th>
-  <th>Skills</th>
-  <th>Total Earnings</th>
-  <th>Rating</th>
-</tr>
-</thead>
-
-<tbody>
-{% for seller in top_sellers %}
-<tr>
-  <td>
-    {% if forloop.counter == 1 %}🥇
-    {% elif forloop.counter == 2 %}🥈
-    {% elif forloop.counter == 3 %}🥉
-    {% else %}{{ forloop.counter }}
+    <!-- Top 3 Podium -->
+    {% if top_sellers|length >= 3 %}
+    <div class="row g-3 mb-4 align-items-end">
+        <!-- 2nd place -->
+        <div class="col-4 text-center">
+            <div class="fm-card rank-2" style="padding:1.5rem 1rem;">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;margin:0 auto 0.7rem;">{{ top_sellers.1.user.username|first|upper }}</div>
+                <div style="font-weight:700;">{{ top_sellers.1.user.username }}</div>
+                <div class="stars" style="font-size:0.85rem;">{% for i in "12345"|make_list %}{% if forloop.counter <= top_sellers.1.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+                <div style="color:var(--accent2);font-weight:700;margin-top:0.5rem;">₹{{ top_sellers.1.total_earnings|floatformat:0 }}</div>
+                <div style="font-size:2rem;margin-top:0.3rem;">🥈</div>
+            </div>
+        </div>
+        <!-- 1st place -->
+        <div class="col-4 text-center">
+            <div class="fm-card rank-1" style="padding:2rem 1rem;">
+                <div style="width:64px;height:64px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.5rem;color:#fff;margin:0 auto 0.7rem;border:2px solid var(--accent2);">{{ top_sellers.0.user.username|first|upper }}</div>
+                <div style="font-weight:700;font-size:1.05rem;">{{ top_sellers.0.user.username }}</div>
+                <div class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= top_sellers.0.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+                <div style="color:var(--accent2);font-weight:800;font-size:1.2rem;margin-top:0.5rem;">₹{{ top_sellers.0.total_earnings|floatformat:0 }}</div>
+                <div style="font-size:2.5rem;margin-top:0.3rem;">🥇</div>
+            </div>
+        </div>
+        <!-- 3rd place -->
+        <div class="col-4 text-center">
+            <div class="fm-card rank-3" style="padding:1.5rem 1rem;">
+                <div style="width:56px;height:56px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;margin:0 auto 0.7rem;">{{ top_sellers.2.user.username|first|upper }}</div>
+                <div style="font-weight:700;">{{ top_sellers.2.user.username }}</div>
+                <div class="stars" style="font-size:0.85rem;">{% for i in "12345"|make_list %}{% if forloop.counter <= top_sellers.2.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+                <div style="color:var(--accent2);font-weight:700;margin-top:0.5rem;">₹{{ top_sellers.2.total_earnings|floatformat:0 }}</div>
+                <div style="font-size:2rem;margin-top:0.3rem;">🥉</div>
+            </div>
+        </div>
+    </div>
     {% endif %}
-  </td>
-  <td>{{ seller.user.username }}</td>
-  <td>{{ seller.skills }}</td>
-  <td class="text-success">₹ {{ seller.total_earnings }}</td>
-  <td>⭐ {{ seller.rating }}</td>
-</tr>
-{% empty %}
-<tr>
-  <td colspan="5">No sellers yet</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
 
+    <!-- Full Table -->
+    <div class="fm-card p-0" style="overflow:hidden;">
+        <div class="table-responsive">
+            <table class="fm-table">
+                <thead>
+                    <tr>
+                        <th style="padding-left:1.5rem;">Rank</th>
+                        <th>Seller</th>
+                        <th>Rating</th>
+                        <th>Earnings</th>
+                        <th>Completed</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for seller in top_sellers %}
+                    <tr>
+                        <td style="padding-left:1.5rem;">
+                            <div class="rank-badge"
+                                 style="{% if forloop.counter == 1 %}background:rgba(245,166,35,0.15);color:var(--accent2);
+                                         {% elif forloop.counter == 2 %}background:rgba(200,210,220,0.1);color:#c8d2dc;
+                                         {% elif forloop.counter == 3 %}background:rgba(176,141,87,0.1);color:#b08d57;
+                                         {% else %}background:var(--surface);color:var(--text-muted);{% endif %}">
+                                {{ forloop.counter }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;color:#fff;flex-shrink:0;">{{ seller.user.username|first|upper }}</span>
+                                <div>
+                                    <div style="font-weight:600;font-size:0.92rem;">{{ seller.user.username }}</div>
+                                    {% if seller.skills.all %}
+                                    <div style="color:var(--text-muted);font-size:0.75rem;">{{ seller.skills.all|slice:":3"|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stars">{% for i in "12345"|make_list %}{% if forloop.counter <= seller.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+                            <div style="color:var(--text-muted);font-size:0.78rem;">{{ seller.rating }}/5</div>
+                        </td>
+                        <td style="color:var(--accent2);font-weight:700;">₹{{ seller.total_earnings|floatformat:0 }}</td>
+                        <td style="color:var(--text-muted);">{{ seller.completed_orders_count }}</td>
+                        <td style="color:var(--text-muted);font-size:0.85rem;">
+                            {% if seller.location %}<i class="bi bi-geo-alt me-1"></i>{{ seller.location }}{% else %}–{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-trophy" style="font-size:3rem;display:block;margin-bottom:1rem;opacity:0.4;"></i>
+        <h5>Leaderboard empty</h5>
+        <p>No sellers have completed orders yet. Be the first!</p>
+    </div>
+    {% endif %}
 </div>
-
-</div>
-
 {% endblock %}

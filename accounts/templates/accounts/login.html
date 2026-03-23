@@ -1,21 +1,95 @@
 {% extends 'base.html' %}
+{% block title %}Sign In – FreelanceMarket{% endblock %}
+
+{% block extra_css %}
+<style>
+.auth-wrapper {
+    min-height: calc(100vh - 70px);
+    display: flex;
+    align-items: center;
+    padding: 3rem 0;
+    background: radial-gradient(ellipse 60% 50% at 20% 70%, rgba(15,52,96,0.7) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 80% 20%, rgba(233,69,96,0.08) 0%, transparent 60%);
+}
+.auth-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+}
+.auth-title {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 900;
+}
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="auth-wrapper">
+    <div class="container">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <div style="font-family:var(--font-display);font-size:1.5rem;font-weight:900;margin-bottom:0.3rem;">
+                    Freelance<span style="color:var(--accent);">Market</span>
+                </div>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p style="color:var(--text-muted);font-size:0.9rem;margin-top:0.3rem;">Sign in to your account</p>
+            </div>
 
-<div class="row justify-content-center">
-  <div class="col-md-4">
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                Invalid username or password. Please try again.
+            </div>
+            {% endif %}
 
-    <div class="card p-4 shadow">
-      <h3 class="text-center mb-3">Login</h3>
+            <form method="post" novalidate>
+                {% csrf_token %}
 
-      <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-dark w-100">Login</button>
-      </form>
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="fm-form-control w-100"
+                           value="{{ form.username.value|default:'' }}"
+                           placeholder="Your username" autofocus required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Password</label>
+                    <div class="position-relative">
+                        <input type="password" name="password" id="pw" class="fm-form-control w-100"
+                               placeholder="Your password" required>
+                        <span onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text-muted);">
+                            <i class="bi bi-eye" id="pwIcon"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <button type="submit" class="btn btn-accent w-100 py-2" style="font-size:1rem;">
+                    Sign In <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </form>
+
+            <p class="text-center mt-4" style="color:var(--text-muted);font-size:0.9rem;">
+                Don't have an account? <a href="{% url 'register' %}" style="color:var(--accent);font-weight:600;text-decoration:none;">Register</a>
+            </p>
+        </div>
     </div>
-
-  </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script>
+function togglePw() {
+    const input = document.getElementById('pw');
+    const icon = document.getElementById('pwIcon');
+    if (input.type === 'password') { input.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+    else { input.type = 'password'; icon.className = 'bi bi-eye'; }
+}
+</script>
 {% endblock %}

@@ -1,34 +1,23 @@
-{% extends 'base.html' %}
-{% block content %}
+{% extends "base.html" %}
+{% comment %} <h2>Pay ₹{{ order.amount }}</h2>
 
-<div class="container mt-5">
-
-<div class="card p-4 shadow text-center col-md-4 mx-auto">
-
-  <h4 class="mb-3">Complete Payment 💳</h4>
-
-  <button id="pay-btn" class="btn btn-success w-100">
-      Pay ₹ {{ order.amount }}
-  </button>
-
-</div>
-
-</div>
-
+<button id="pay-btn">Pay Now</button>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
+
 var options = {
     "key": "{{ key }}",
     "amount": "{{ payment.amount }}",
     "currency": "INR",
+    "name": "FreelanceMarket",
+    "description": "Order Payment",
     "order_id": "{{ payment.id }}",
 
     "handler": function (response){
-        window.location.href =
-        "{% url 'payment_success' %}?order_id={{ order.order_id }}&payment_id=" 
-        + response.razorpay_payment_id;
+
+        window.location.href = "/orders/success/?order_id={{ order.order_id }}&payment_id=" + response.razorpay_payment_id;
     }
 };
 
@@ -38,6 +27,81 @@ document.getElementById('pay-btn').onclick = function(e){
     rzp.open();
     e.preventDefault();
 }
+
+</script> {% endcomment %}
+
+
+
+
+
+
+{% block title %}Payment | FreelanceMarket{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-5">
+
+            <div class="fm-card text-center">
+
+                <div class="section-label">Secure Payment</div>
+
+                <h2 class="mb-3">Complete Your Payment</h2>
+
+                <div class="display-6 fw-bold mb-4" style="color:var(--accent2);">
+                    ₹{{ order.amount }}
+                </div>
+
+                <p class="text-muted mb-4">
+                    <i class="bi bi-shield-lock"></i>
+                    Payment powered by Razorpay
+                </p>
+
+                <!-- YOUR ORIGINAL BUTTON -->
+                <button id="pay-btn" class="btn btn-accent btn-lg w-100">
+                    <i class="bi bi-credit-card me-2"></i>
+                    Pay Now
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- YOUR ORIGINAL SCRIPT (UNCHANGED) -->
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+
+var options = {
+    "key": "{{ key }}",
+    "amount": "{{ payment.amount }}",
+    "currency": "INR",
+    "name": "FreelanceMarket",
+    "description": "Order Payment",
+    "order_id": "{{ payment.id }}",
+
+    "handler": function (response){
+
+        window.location.href = "/orders/success/?order_id={{ order.order_id }}&payment_id=" + response.razorpay_payment_id;
+    }
+};
+
+var rzp = new Razorpay(options);
+
+document.getElementById('pay-btn').onclick = function(e){
+    rzp.open();
+    e.preventDefault();
+}
+
 </script>
 
 {% endblock %}

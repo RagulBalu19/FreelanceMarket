@@ -1,23 +1,58 @@
 {% extends 'base.html' %}
+{% block title %}Notifications – FreelanceMarket{% endblock %}
+
 {% block content %}
-
-<div class="container mt-5">
-
-<h3>Notifications 🔔</h3>
-
-<ul class="list-group">
-  {% for notification in notifications %}
-    <li class="list-group-item">
-        {{ notification.message }}
-        <small class="text-muted float-end">
-            {{ notification.created_at }}
-        </small>
-    </li>
-  {% empty %}
-    <li class="list-group-item">No notifications</li>
-  {% endfor %}
-</ul>
-
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <div class="section-label">Inbox</div>
+                <h1>Notifications</h1>
+            </div>
+            {% if unread_count %}
+            <span class="status-badge" style="background:rgba(233,69,96,0.15);color:var(--accent);font-size:0.9rem;padding:0.4rem 1rem;">
+                {{ unread_count }} unread
+            </span>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
+<div class="container pb-5" style="max-width:720px;">
+    {% if notifications %}
+    <div class="d-flex flex-column gap-2">
+        {% for notif in notifications %}
+        <div class="fm-card d-flex align-items-start gap-3 {% if not notif.is_read %}{% endif %}"
+             style="{% if not notif.is_read %}border-color:rgba(233,69,96,0.3);{% endif %}">
+            <div style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                        {% if not notif.is_read %}background:rgba(233,69,96,0.15);{% else %}background:var(--surface);{% endif %}">
+                <i class="bi bi-bell" style="{% if not notif.is_read %}color:var(--accent);{% else %}color:var(--text-muted);{% endif %}"></i>
+            </div>
+            <div class="flex-grow-1">
+                <p style="margin:0;font-size:0.92rem;{% if not notif.is_read %}font-weight:600;{% endif %}">
+                    {{ notif.message }}
+                </p>
+                <div style="color:var(--text-muted);font-size:0.78rem;margin-top:0.3rem;">
+                    {{ notif.created_at|date:"M d, Y – g:i A" }}
+                </div>
+            </div>
+            {% if notif.order %}
+            <a href="{% url 'order_chat' notif.order.order_id %}" class="btn btn-sm btn-outline-accent flex-shrink-0">
+                View
+            </a>
+            {% endif %}
+            {% if not notif.is_read %}
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px;"></span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-bell-slash" style="font-size:3rem;display:block;margin-bottom:1rem;opacity:0.4;"></i>
+        <h5>No notifications</h5>
+        <p>You're all caught up!</p>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

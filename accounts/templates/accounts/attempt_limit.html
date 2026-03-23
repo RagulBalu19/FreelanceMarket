@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Attempt Limit Reached{% endblock %}
+{% block content %}
+<div class="container py-5 text-center" style="max-width:480px;">
+    <div class="fm-card">
+        <div style="font-size:3rem;margin-bottom:1rem;">🚫</div>
+        <h2 style="font-family:var(--font-display);font-weight:900;">Attempt Limit Reached</h2>
+        <p style="color:var(--text-muted);line-height:1.7;margin:1rem 0 1.5rem;">You've used all your attempts for this problem. Practice more and check back later for new challenges.</p>
+        <a href="{% url 'my_tests' %}" class="btn btn-accent">Back to Tests</a>
+    </div>
+</div>
+{% endblock %}
